@@ -1,0 +1,13 @@
+apiVersion: infra.k8/v1alpha1
+kind: XDatabase
+metadata:
+  name: guestbook-demo
+spec:
+  name: guestbook-demo
+  engine: postgres
+  version: "16"
+  size: small
+  storageGB: 20
+  tier: dev
+  cluster: demo
+  owner: platform-team

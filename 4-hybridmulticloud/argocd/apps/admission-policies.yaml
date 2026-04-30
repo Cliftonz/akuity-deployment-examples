@@ -1,0 +1,43 @@
+# Admission policies (ValidatingAdmissionPolicy + Binding). Catches anything
+# that lands by hand, bypassing CI: a `kubectl apply`, a `helm install` from
+# a laptop, a controller behaving badly. Belt and suspenders next to the
+# CI policy checks.
+#
+# VAP is built into Kubernetes (GA in 1.30+), so no Kyverno or Gatekeeper
+# install required at this tier.
+#
+# Sync wave -3 so the policies land before the platform Apps; otherwise the
+# first ingress-nginx sync evaluates against missing policies and slips
+# through.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: admission-policies
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "-3"
+    notifications.argoproj.io/subscribe.on-sync-failed.slack: <slack-channel>
+    notifications.argoproj.io/subscribe.on-health-degraded.slack: <slack-channel>
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: platform
+  source:
+    repoURL: https://github.com/<repo>
+    targetRevision: HEAD
+    path: 4-hybridmulticloud/platform/admission
+  destination:
+    name: in-cluster
+    namespace: kube-system
+  syncPolicy:
+    automated:
+      prune: false
+      selfHeal: false
+    retry:
+      limit: 5
+      backoff:
+        duration: 30s
+        factor: 2
+        maxDuration: 5m
+    syncOptions:
+      - ServerSideApply=true

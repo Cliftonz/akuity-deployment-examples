@@ -1,0 +1,76 @@
+apiVersion: kargo.akuity.io/v1alpha1
+kind: Stage
+metadata:
+  name: dev
+  namespace: kargo-simple
+spec:
+  requestedFreight:
+    - origin:
+        kind: Warehouse
+        name: guestbook
+      sources:
+        direct: true
+  verification:
+    analysisTemplates:
+      - name: guestbook-http-probe
+    args:
+      - name: service-name
+        value: guestbook
+      - name: service-namespace
+        value: guestbook-dev
+  promotionTemplate:
+    spec:
+      vars:
+        - name: gitRepo
+          value: https://github.com/<repo>
+        - name: imageRepo
+          value: ghcr.io/<user>/guestbook
+        - name: env
+          value: dev
+      # Helm-based promotion. helm-update-image bumps the digest in the
+      # per-env values file; helm-template renders the chart against that
+      # overlay; output lands on env/<env> branch as plain Kubernetes YAML.
+      steps:
+        - uses: git-clone
+          config:
+            repoURL: ${{ vars.gitRepo }}
+            checkout:
+              - branch: main
+                path: ./src
+              - branch: env/${{ vars.env }}
+                create: true
+                path: ./out
+        - uses: helm-update-image
+          as: update-image
+          config:
+            path: ./src/3-crossplane+helm/env/values-${{ vars.env }}.yaml
+            images:
+              - image: ${{ vars.imageRepo }}
+                key: image.digest
+                value: ${{ imageFrom(vars.imageRepo).Digest }}
+        - uses: helm-template
+          config:
+            path: ./src/3-crossplane+helm/charts/guestbook
+            valuesFiles:
+              - ./src/3-crossplane+helm/env/values-${{ vars.env }}.yaml
+            outPath: ./src/manifests.yaml
+        - uses: copy
+          config:
+            inPath: ./src/manifests.yaml
+            outPath: ./out/rendered/${{ vars.env }}/manifests.yaml
+        - uses: git-commit
+          as: commit
+          config:
+            path: ./out
+            message: ${{ outputs['update-image'].commitMessage }}
+        - uses: git-push
+          config:
+            path: ./out
+            targetBranch: env/${{ vars.env }}
+        - uses: argocd-update
+          config:
+            apps:
+              - name: guestbook-${{ vars.env }}
+                sources:
+                  - repoURL: ${{ vars.gitRepo }}
+                    desiredRevision: ${{ outputs.commit.commit }}

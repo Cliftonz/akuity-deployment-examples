@@ -1,0 +1,14 @@
+apiVersion: infra.k8/v1alpha1
+kind: XIngress
+metadata:
+  name: demo-app
+spec:
+  name: demo-app
+  namespace: demo-app
+  tier: dev
+  cluster: demo
+  owner: platform-team
+  host: demo-app.demo.example.com
+  serviceName: demo-app
+  servicePort: 80
+  ingressClassName: traefik

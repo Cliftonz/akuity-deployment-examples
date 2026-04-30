@@ -1,0 +1,6 @@
+namespace: guestbook-prod
+
+replicaCount: 3
+
+image:
+  tag: "0.0.1"

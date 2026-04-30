@@ -1,0 +1,40 @@
+# App-of-apps for the Kargo control plane. Argo CD reconciles the Project,
+# ProjectConfig, Warehouse, AnalysisTemplate, and Stages from `kargo/`, so
+# changing the promotion model is just a regular GitOps PR.
+#
+# `prune: false` is deliberate — these CRs are stateful. A transient render
+# error producing empty output would otherwise prune live Stages and take
+# the freight history with them. Drift here gets a manual sync, not a
+# self-heal loop.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: kargo-pipelines
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "-5"
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: platform
+  source:
+    repoURL: https://github.com/<repo>
+    targetRevision: HEAD
+    path: 0-kustomize/kargo
+  destination:
+    name: in-cluster
+    namespace: kargo-simple
+  syncPolicy:
+    automated:
+      prune: false
+      selfHeal: false
+    retry:
+      limit: 5
+      backoff:
+        duration: 30s
+        factor: 2
+        maxDuration: 5m
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true
+      - PruneLast=true

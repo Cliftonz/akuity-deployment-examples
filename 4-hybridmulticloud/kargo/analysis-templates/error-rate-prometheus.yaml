@@ -1,0 +1,24 @@
+# Tier-1 AnalysisTemplate. Builds on tier 0's HTTP probe by adding a
+# Prometheus-driven error-rate check. Freight that promotes a chart whose
+# new revision hits >2% 5xx in 5 minutes does not move on.
+apiVersion: argoproj.io/v1alpha1
+kind: AnalysisTemplate
+metadata:
+  name: error-rate-prometheus
+  namespace: kargo-simple
+spec:
+  args:
+    - name: service-name
+    - name: service-namespace
+  metrics:
+    - name: error-rate
+      successCondition: result[0] < 0.02
+      failureLimit: 1
+      provider:
+        prometheus:
+          # Cluster-internal Prometheus from kube-prometheus-stack at tier 1.
+          address: http://kps-prometheus.monitoring.svc.cluster.local:9090
+          query: |
+            sum(rate(http_requests_total{namespace="{{args.service-namespace}}",service="{{args.service-name}}",code=~"5.."}[5m]))
+            /
+            sum(rate(http_requests_total{namespace="{{args.service-namespace}}",service="{{args.service-name}}"}[5m]))

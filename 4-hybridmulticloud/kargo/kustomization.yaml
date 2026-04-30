@@ -1,0 +1,38 @@
+# Two CD pipelines (claims + chart), each with multi-region prod gates.
+#
+# Claims pipeline: kargo-claims Project, claims-* Stages. Promotes claim
+# YAML + rendered XRD/Composition output from framework/. Per-region prod
+# Stages match the chart pipeline.
+#
+# App pipeline: kargo-simple Project, dev/staging/prod-<region> Stages.
+# The prod Stages all reference one parameterized PromotionTask
+# (regional-promote) — three Stages, one set of steps.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  # Claims pipeline (API)
+  - projects/kargo-claims.yaml
+  - projects/project-config-claims.yaml
+  - warehouses/claims.yaml
+  - stages/claims-dev.yaml
+  - stages/claims-staging.yaml
+  - stages/claims-prod-us-east.yaml
+  - stages/claims-prod-eu-west.yaml
+  - stages/claims-prod-ap-southeast.yaml
+  # App pipeline (chart)
+  - projects/kargo-simple.yaml
+  - projects/project-config.yaml
+  - warehouses/guestbook.yaml
+  - analysis-templates/guestbook-http-probe.yaml
+  - analysis-templates/error-rate-prometheus.yaml
+  - analysis-templates/db-claim-ready.yaml
+  - analysis-templates/regional-latency.yaml
+  # Parameterized PromotionTask shared by every prod-<region> Stage.
+  - promotion-tasks/regional-promote.yaml
+  - stages/dev.yaml
+  - stages/staging.yaml
+  # Three independent regional prod gates.
+  - stages/prod-us-east.yaml
+  - stages/prod-eu-west.yaml
+  - stages/prod-ap-southeast.yaml

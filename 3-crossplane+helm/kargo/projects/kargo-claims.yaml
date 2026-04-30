@@ -1,0 +1,19 @@
+# Separate Kargo Project for the claim-promotion pipeline.
+#
+# Tier 3+ runs TWO CD pipelines:
+#   1. kargo-claims (this Project) — promotes XDatabase claim version
+#      changes (engine bumps, size changes, retention policy updates).
+#      Slow cadence; usually monthly. Owned by platform team.
+#   2. kargo-simple (the existing Project) — promotes the consuming
+#      Helm chart (image tags, values changes). Fast cadence; daily+.
+#      Owned by app teams.
+#
+# Splitting them means a chart-only release (which is most of them)
+# does not require touching the claim freight, and an XRD migration
+# does not block app deploys.
+apiVersion: kargo.akuity.io/v1alpha1
+kind: Project
+metadata:
+  name: kargo-claims
+  annotations:
+    argocd.argoproj.io/sync-wave: "-1"

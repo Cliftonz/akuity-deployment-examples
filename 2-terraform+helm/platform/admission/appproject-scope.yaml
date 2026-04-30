@@ -1,0 +1,36 @@
+# Runtime mirror of policy/argocd.rego. CI catches AppProject scope drift on
+# PR; this catches a kubectl-applied AppProject that bypassed the repo flow.
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingAdmissionPolicy
+metadata:
+  name: appproject-scope-guard
+spec:
+  failurePolicy: Fail
+  matchConstraints:
+    resourceRules:
+      - apiGroups: ["argoproj.io"]
+        apiVersions: ["v1alpha1"]
+        operations: ["CREATE", "UPDATE"]
+        resources: ["appprojects"]
+  validations:
+    - expression: |
+        object.metadata.name != 'business' || !object.spec.destinations.exists(d, d.namespace.contains('*'))
+      message: "business AppProject destinations must be enumerated, not glob"
+      reason: Invalid
+    - expression: |
+        object.metadata.name != 'business' || !object.spec.?clusterResourceWhitelist.orValue([]).exists(cw, cw.kind == '*')
+      message: "business AppProject can't whitelist clusterResource kind '*'"
+      reason: Invalid
+    - expression: |
+        object.metadata.name != 'platform' || !object.spec.?clusterResourceWhitelist.orValue([]).exists(cw, cw.group == '*' && cw.kind == '*')
+      message: "platform AppProject must enumerate clusterResource kinds — */* is too broad"
+      reason: Invalid
+---
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingAdmissionPolicyBinding
+metadata:
+  name: appproject-scope-guard
+spec:
+  policyName: appproject-scope-guard
+  validationActions: [Audit]   # tier 1: Audit-only — log violations, do not block
+  matchResources: {}

@@ -1,0 +1,58 @@
+# loki values for tier 2.
+#
+# Tier 2 is the wild-west infra tier. The motivating reason to add Loki here
+# (vs. tier 1) is that drift between Terraform-managed Postgres and Helm-
+# managed app Secret often manifests as a noisy log pattern (the deployment
+# crashes with "secret not found"). Loki lets the runbooks correlate that.
+#
+# Single-binary deployment for simplicity; tier 3 keeps the same shape;
+# tier 4 splits into a distributed deployment with per-region storage.
+
+deploymentMode: SingleBinary
+
+loki:
+  auth_enabled: false
+  commonConfig:
+    replication_factor: 1
+  storage:
+    type: filesystem
+  schemaConfig:
+    configs:
+      - from: "2024-01-01"
+        store: tsdb
+        object_store: filesystem
+        schema: v13
+        index:
+          prefix: loki_index_
+          period: 24h
+
+singleBinary:
+  replicas: 1
+  resources:
+    requests:
+      cpu: 200m
+      memory: 512Mi
+    limits:
+      cpu: 1000m
+      memory: 2Gi
+  persistence:
+    enabled: true
+    size: 50Gi
+
+# Disable distributor / read paths in single-binary mode.
+backend:
+  replicas: 0
+read:
+  replicas: 0
+write:
+  replicas: 0
+gateway:
+  enabled: false
+
+monitoring:
+  selfMonitoring:
+    enabled: false
+  lokiCanary:
+    enabled: false
+  serviceMonitor:
+    enabled: true     # picked up by kube-prometheus-stack

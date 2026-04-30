@@ -1,0 +1,22 @@
+# Tier-1 task manifest. Builds on tier 0 with a security-flavored
+# scheduled report — the first compliance-relevant task that lands once
+# SOC 2 is on the calendar.
+slackChannel: "#deploys"
+tasks:
+  - file: argocd/sync-status-report.md
+    title: Weekly Argo CD sync-status report
+    schedule: "0 9 * * 1"
+    context: argocd
+    deliverTo:
+      kind: slack
+      channel: "#deploys"
+    owner: platform-team
+
+  - file: security/expiring-certificates.md
+    title: Certificates expiring in 30 days
+    schedule: "0 9 * * 1"
+    context: security
+    deliverTo:
+      kind: slack
+      channel: "#security"
+    owner: platform-team

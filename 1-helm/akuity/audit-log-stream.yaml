@@ -1,0 +1,46 @@
+# Akuity Audit Log streaming — tier-1 stub.
+#
+# This is a placeholder Akuity OrganizationStreamingDestination resource
+# (the actual Akuity API kind name varies; check the current Akuity CRD
+# version when wiring). The point is to give the SE conversation something
+# concrete to point at when a prospect asks "what does the SOC 2 audit
+# evidence pipeline look like at tier 1?"
+#
+# At tier 1, every Argo CD action (sync, manual sync, login, RBAC change)
+# emits an audit-log event into the Akuity-managed control plane. This
+# resource configures where those events get exported.
+#
+# DESIGNED, NOT WIRED: replace placeholders below with real SIEM endpoint
+# + token before applying. See docs/akuity-audit-log-siem.md for the
+# end-to-end flow.
+apiVersion: akuity.io/v1
+kind: OrganizationStreamingDestination
+metadata:
+  name: audit-log-to-siem
+  # This is an org-level resource, not cluster-scoped. The Akuity console
+  # applies it via API; this YAML is the source of truth.
+spec:
+  # Where the audit stream goes. Real customer values: a Splunk HEC URL,
+  # a Datadog log intake, a custom S3 bucket via webhook receiver.
+  destination:
+    type: webhook
+    webhook:
+      url: <siem-endpoint>
+      tokenSecretRef:
+        name: audit-log-siem-token
+        namespace: argocd
+        key: token
+
+  # What gets sent. Tier 1 forwards every Argo CD audit-log event; tier 4
+  # filters by region for cost reasons (an extra `region` field is added).
+  filters:
+    - resource: "argocd.*"
+      verbs: ["create", "update", "delete", "sync"]
+    - resource: "kargo.*"
+      verbs: ["promote", "verify"]
+
+  # Retry policy on the customer side. Akuity retries up to this many times
+  # before queueing the event for manual replay.
+  retry:
+    maxAttempts: 5
+    backoffSeconds: 30

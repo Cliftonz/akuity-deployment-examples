@@ -1,0 +1,61 @@
+# Tier 4 cluster generator. Fans the prod guestbook Application across
+# every cluster registered in Akuity Argo CD with the labels
+# `env=prod` AND `app=guestbook`. Argo CD then reconciles each per-region
+# rendered manifests branch (env/prod-<region>) onto its matching cluster.
+#
+# Each generated Application carries a per-region Kargo authorized-stage
+# annotation, so `prod-us-east`, `prod-eu-west`, and `prod-ap-southeast`
+# Stages each gate exactly the cluster they target.
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: regional-rollout-prod
+  namespace: argocd
+spec:
+  goTemplate: true
+  goTemplateOptions: ["missingkey=error"]
+  generators:
+    - clusters:
+        selector:
+          matchLabels:
+            env: prod
+            app: guestbook
+  template:
+    metadata:
+      # Cluster decorator must carry the `region` label (us-east / eu-west /
+      # ap-southeast) at registration time. The template names the
+      # Application after the region for human-friendly identification in
+      # the Argo CD UI.
+      name: 'guestbook-prod-{{ .metadata.labels.region }}'
+      annotations:
+        kargo.akuity.io/authorized-stage: 'kargo-simple:prod-{{ .metadata.labels.region }}'
+        notifications.argoproj.io/subscribe.on-sync-failed.slack: <slack-channel>
+        notifications.argoproj.io/subscribe.on-health-degraded.slack: <slack-channel>
+        notifications.argoproj.io/subscribe.on-sync-status-unknown.slack: <slack-channel>
+    spec:
+      project: business
+      source:
+        repoURL: https://github.com/<repo>
+        # Each region pulls its own env branch where the per-region Kargo
+        # Stage has hydrated rendered manifests.
+        targetRevision: 'env/prod-{{ .metadata.labels.region }}'
+        path: 'rendered/prod-{{ .metadata.labels.region }}'
+        directory:
+          recurse: false
+          include: 'manifests.yaml'
+      destination:
+        server: '{{ .server }}'
+        namespace: 'guestbook-prod'
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
+        retry:
+          limit: 5
+          backoff:
+            duration: 30s
+            factor: 2
+            maxDuration: 5m
+        syncOptions:
+          - CreateNamespace=true
+          - ServerSideApply=true

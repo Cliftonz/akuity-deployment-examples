@@ -1,0 +1,34 @@
+installCRDs: true
+replicaCount: 2
+prometheus:
+  enabled: true
+  # ServiceMonitor turns the metrics endpoint into something Prometheus
+  # actually scrapes. Without it, ACME order failures, certificate expiry,
+  # and webhook latency are all invisible — and you find out the hard way
+  # when a cert silently fails to renew.
+  servicemonitor:
+    enabled: true
+    labels:
+      release: kube-prometheus-stack
+webhook:
+  replicaCount: 2
+  podDisruptionBudget:
+    enabled: true
+    minAvailable: 1
+cainjector:
+  replicaCount: 2
+  podDisruptionBudget:
+    enabled: true
+    minAvailable: 1
+podDisruptionBudget:
+  enabled: true
+  minAvailable: 1
+resources:
+  requests:
+    cpu: 50m
+    memory: 64Mi
+  limits:
+    cpu: 200m
+    memory: 256Mi
+securityContext:
+  runAsNonRoot: true

@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: monitoring
+  labels:
+    app.kubernetes.io/name: monitoring
+    app.kubernetes.io/part-of: platform
+    # ADR-003 references egress to "monitoring" from staging/prod NetworkPolicy.
+    # That label below makes the matchLabels in those policies actually match.
+    kubernetes.io/metadata.name: monitoring
+    pod-security.kubernetes.io/enforce: privileged   # node-exporter needs hostPID
+    pod-security.kubernetes.io/warn: privileged

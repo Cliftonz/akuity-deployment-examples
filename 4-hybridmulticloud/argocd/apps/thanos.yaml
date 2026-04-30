@@ -1,0 +1,53 @@
+# Thanos — fleet-wide metric federation. Tier 4 only.
+#
+# Each regional Prometheus runs a Thanos sidecar (added via a per-region
+# kube-prometheus-stack values overlay — out of scope for this manifest);
+# the central Thanos receiver/query/store-gateway aggregates them.
+#
+# This is the central source the weekly-incident-summary task reads from —
+# one PromQL endpoint, every region's metrics.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: thanos
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "-1"
+    notifications.argoproj.io/subscribe.on-sync-failed.slack: <slack-channel>
+    notifications.argoproj.io/subscribe.on-health-degraded.slack: <slack-channel>
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: platform
+  sources:
+    - repoURL: https://charts.bitnami.com/bitnami
+      chart: thanos
+      targetRevision: 15.7.20
+      helm:
+        releaseName: thanos
+        valueFiles:
+          - $values/4-hybridmulticloud/platform/thanos/values.yaml
+    - repoURL: https://github.com/<repo>
+      targetRevision: HEAD
+      ref: values
+    - repoURL: https://github.com/<repo>
+      targetRevision: HEAD
+      path: 4-hybridmulticloud/platform/thanos
+      directory:
+        include: 'namespace.yaml'
+  destination:
+    name: in-cluster
+    namespace: monitoring
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    retry:
+      limit: 5
+      backoff:
+        duration: 30s
+        factor: 2
+        maxDuration: 5m
+    syncOptions:
+      - ServerSideApply=true
+      - CreateNamespace=true

@@ -1,0 +1,18 @@
+# Tier-4 claims Warehouse. Subscribes to claim files + Compositions +
+# EnvironmentConfigs (the regional routing logic). Any commit changing
+# any of these produces freight eligible for the claims-* Stages.
+apiVersion: kargo.akuity.io/v1alpha1
+kind: Warehouse
+metadata:
+  name: claims
+  namespace: kargo-claims
+spec:
+  subscriptions:
+    - git:
+        repoURL: https://github.com/<repo>
+        branch: main
+        includePaths:
+          - "4-hybridmulticloud/claims/**"
+          - "framework/platform/compositions/**"
+          - "framework/platform/xrd/database.cue"
+          - "framework/platform/environment/**"

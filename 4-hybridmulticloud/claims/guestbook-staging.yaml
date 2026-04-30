@@ -1,0 +1,13 @@
+apiVersion: infra.k8/v1alpha1
+kind: XDatabase
+metadata:
+  name: guestbook-staging
+spec:
+  name: guestbook-staging
+  engine: yugabytedb
+  version: "2.21"
+  size: medium
+  storageGB: 50
+  tier: staging
+  cluster: hub
+  owner: guestbook-team

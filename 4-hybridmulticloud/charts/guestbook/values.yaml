@@ -1,0 +1,57 @@
+# Default values. Per-env overrides live in 4-hybridmulticloud/env/values-{dev,staging,prod}.yaml.
+# Kargo overwrites image.tag (or image.digest) at promotion time.
+
+# Namespace the chart deploys into. Per-env overlays override this.
+namespace: guestbook
+
+image:
+  repository: ghcr.io/<user>/guestbook
+  tag: "0.0.1"
+  # Kargo replaces this with a digest at promotion time. When set,
+  # takes precedence over .tag. Leave empty in defaults.
+  digest: ""
+
+replicaCount: 1
+revisionHistoryLimit: 3
+
+# PodDisruptionBudget. minAvailable: 1 is fine for replicaCount >= 1.
+pdb:
+  minAvailable: 1
+
+service:
+  port: 80
+  targetPort: http
+
+container:
+  port: 3000
+  resources:
+    requests:
+      cpu: 50m
+      memory: 64Mi
+    limits:
+      cpu: 200m
+      memory: 256Mi
+
+# Pod Security Admission labels on the namespace.
+podSecurityAdmission:
+  enforce: restricted
+  audit: restricted
+  warn: restricted
+
+# YugabyteDB connection. At tier 4 the engine swaps from Postgres to
+# YugabyteDB because it's multi-region native — one logical database
+# spans every region via xCluster replication, so the app team writes
+# one claim and gets a database that follows their users no matter
+# which region they're in.
+#
+# YugabyteDB exposes a Postgres-wire-protocol-compatible YSQL endpoint on
+# port 5433 (not Postgres's 5432). The Crossplane Composition produces a
+# connection Secret with the same DATABASE_* env-var shape the chart's
+# envFrom expects; the only behavioral difference is the port.
+database:
+  enabled: true
+  engine: yugabytedb
+  # Default YSQL port. Override per-env if needed.
+  port: 5433
+  # Secret name produced by the XDatabase Composition in this namespace.
+  secretName: guestbook-yugabyte

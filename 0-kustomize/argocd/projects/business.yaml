@@ -1,0 +1,44 @@
+# Product teams' project. Namespace-scoped, high-frequency, self-serve.
+# A guestbook deploy ten times a day shouldn't need the platform team to
+# unlock anything — but it also can't reach beyond its own namespaces.
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: business
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  description: Product-team workloads. Namespace-scoped, self-serve.
+  sourceRepos:
+    - https://github.com/<repo>
+  # Enumerated, not glob. The earlier `guestbook-*` was wide enough that a PR
+  # adding `apps/guestbook-evil/envs/dev/` would slip through — the namespace
+  # would still match. List them out, and a rogue directory has nowhere to land.
+  destinations:
+    - namespace: guestbook-dev
+      server: "*"
+    - namespace: guestbook-staging
+      server: "*"
+    - namespace: guestbook-prod
+      server: "*"
+  # Namespace creation is the one cluster-scoped permission this project gets.
+  # ApplicationSet sets `CreateNamespace=true` and the kustomize base bundles
+  # a Namespace; both need this entry. Nothing else cluster-wide.
+  clusterResourceWhitelist:
+    - group: ""
+      kind: Namespace
+  namespaceResourceWhitelist:
+    - group: ""
+      kind: "*"
+    - group: apps
+      kind: "*"
+    - group: networking.k8s.io
+      kind: "*"
+    - group: autoscaling
+      kind: "*"
+    - group: policy
+      kind: "*"
+  # No `roles:` block at tier 0. The founders are the only operators and
+  # use the local Argo CD admin account directly. Tier 1 introduces SSO
+  # via Dex + per-AppProject role bindings against IdP groups.

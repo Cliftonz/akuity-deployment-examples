@@ -1,0 +1,18 @@
+# Second business app's claim. Demonstrates multi-tenant self-service:
+# the orders team files this without touching guestbook's claim or the
+# platform team's XRD. The same Composition picks it up; AppProject RBAC
+# scopes orders-* and guestbook-* differently so each team only sees
+# its own claims in the Argo CD UI.
+apiVersion: infra.k8/v1alpha1
+kind: XDatabase
+metadata:
+  name: orders-dev
+spec:
+  name: orders-dev
+  engine: yugabytedb
+  version: "2.21"
+  size: small
+  storageGB: 10
+  tier: dev
+  cluster: hub
+  owner: orders-team

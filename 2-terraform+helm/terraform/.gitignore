@@ -1,0 +1,16 @@
+# Local state files contain plaintext credentials. The wild-west
+# narrative is the point of this tier — but committing tfstate makes
+# the same blast-radius worse. Keep it local-only until the squad sets
+# up a real backend (see main.tf for the example backend "s3" block).
+*.tfstate
+*.tfstate.*
+*.tfstate.backup
+crash.log
+crash.*.log
+.terraform/
+.terraform.lock.hcl
+
+# Variable files that may carry sensitive values
+*.tfvars
+*.tfvars.json
+!example.tfvars

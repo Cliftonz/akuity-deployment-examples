@@ -1,0 +1,75 @@
+apiVersion: kargo.akuity.io/v1alpha1
+kind: Stage
+metadata:
+  name: staging
+  namespace: kargo-simple
+spec:
+  requestedFreight:
+    - origin:
+        kind: Warehouse
+        name: guestbook
+      sources:
+        stages:
+          - dev
+  # Same probe shape as dev. Freight only moves on if this comes back green.
+  verification:
+    analysisTemplates:
+      - name: guestbook-http-probe
+    args:
+      - name: service-name
+        value: guestbook
+      - name: service-namespace
+        value: guestbook-staging
+  promotionTemplate:
+    spec:
+      vars:
+        - name: gitRepo
+          value: https://github.com/<repo>
+        - name: imageRepo
+          value: ghcr.io/<user>/guestbook
+        - name: env
+          value: staging
+      steps:
+        - uses: git-clone
+          config:
+            repoURL: ${{ vars.gitRepo }}
+            checkout:
+              - branch: main
+                path: ./src
+              - branch: env/${{ vars.env }}
+                create: true
+                path: ./out
+        - uses: helm-update-image
+          as: update-image
+          config:
+            path: ./src/1-helm/env/values-${{ vars.env }}.yaml
+            images:
+              - image: ${{ vars.imageRepo }}
+                key: image.digest
+                value: ${{ imageFrom(vars.imageRepo).Digest }}
+        - uses: helm-template
+          config:
+            path: ./src/1-helm/charts/guestbook
+            valuesFiles:
+              - ./src/1-helm/env/values-${{ vars.env }}.yaml
+            outPath: ./src/manifests.yaml
+        - uses: copy
+          config:
+            inPath: ./src/manifests.yaml
+            outPath: ./out/rendered/${{ vars.env }}/manifests.yaml
+        - uses: git-commit
+          as: commit
+          config:
+            path: ./out
+            message: ${{ outputs['update-image'].commitMessage }}
+        - uses: git-push
+          config:
+            path: ./out
+            targetBranch: env/${{ vars.env }}
+        - uses: argocd-update
+          config:
+            apps:
+              - name: guestbook-${{ vars.env }}
+                sources:
+                  - repoURL: ${{ vars.gitRepo }}
+                    desiredRevision: ${{ outputs.commit.commit }}

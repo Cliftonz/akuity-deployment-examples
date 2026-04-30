@@ -1,0 +1,60 @@
+# Tier-4 task manifest. Inherits tier 3 and adds the weekly fleet-wide
+# incident summary — the single highest-leverage report at this tier.
+# Aggregates incidents across every regional cluster into one digest so
+# the on-call manager can spot region-specific patterns (e.g. eu-west
+# always degrades on Tuesdays during the EU-data-residency batch jobs).
+slackChannel: "#deploys"
+tasks:
+  - file: argocd/sync-status-report.md
+    title: Weekly Argo CD sync-status report
+    schedule: "0 9 * * 1"
+    context: argocd
+    deliverTo:
+      kind: slack
+      channel: "#deploys"
+    owner: platform-team
+
+  - file: security/expiring-certificates.md
+    title: Certificates expiring in 30 days
+    schedule: "0 9 * * 1"
+    context: security
+    deliverTo:
+      kind: slack
+      channel: "#security"
+    owner: platform-team
+
+  - file: platform/api-deprecation-report.md
+    title: Deprecated Kubernetes API usage
+    schedule: "0 9 1 * *"  # First of month
+    context: platform
+    deliverTo:
+      kind: slack
+      channel: "#platform"
+    owner: platform-team
+
+  - file: platform/over-provisioned-workloads-report.md
+    title: Workloads using <30% of requested CPU/memory
+    schedule: "0 9 * * 1"
+    context: platform
+    deliverTo:
+      kind: slack
+      channel: "#platform"
+    owner: platform-team
+
+  - file: security/image-vulnerability-report.md
+    title: Image vulnerability scan summary
+    schedule: "0 9 * * 1"
+    context: security
+    deliverTo:
+      kind: slack
+      channel: "#security"
+    owner: security-team
+
+  - file: platform/weekly-incident-summary.md
+    title: Fleet-wide weekly incident summary
+    schedule: "0 9 * * 1"
+    context: platform
+    deliverTo:
+      kind: slack
+      channel: "#platform"
+    owner: platform-team

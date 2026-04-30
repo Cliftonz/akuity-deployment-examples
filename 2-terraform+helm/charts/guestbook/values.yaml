@@ -1,0 +1,49 @@
+# Default values. Per-env overrides live in 2-terraform+helm/env/values-{dev,staging,prod}.yaml.
+# Kargo overwrites image.tag (or image.digest) at promotion time.
+
+# Namespace the chart deploys into. Per-env overlays override this.
+namespace: guestbook
+
+image:
+  repository: ghcr.io/<user>/guestbook
+  tag: "0.0.1"
+  # Kargo replaces this with a digest at promotion time. When set,
+  # takes precedence over .tag. Leave empty in defaults.
+  digest: ""
+
+replicaCount: 1
+revisionHistoryLimit: 3
+
+# PodDisruptionBudget. minAvailable: 1 is fine for replicaCount >= 1.
+pdb:
+  minAvailable: 1
+
+service:
+  port: 80
+  targetPort: http
+
+container:
+  port: 3000
+  resources:
+    requests:
+      cpu: 50m
+      memory: 64Mi
+    limits:
+      cpu: 200m
+      memory: 256Mi
+
+# Pod Security Admission labels on the namespace.
+podSecurityAdmission:
+  enforce: restricted
+  audit: restricted
+  warn: restricted
+
+# External Postgres connection. The Secret is provisioned out-of-band by the
+# Terraform module under 2-terraform+helm/terraform/postgres/. The app
+# reads connection details via envFrom — values here only carry the Secret
+# name, not credentials.
+database:
+  enabled: true
+  # Name of the Secret that the Terraform module creates in this namespace.
+  # Per-env overlays override this.
+  secretName: guestbook-postgres

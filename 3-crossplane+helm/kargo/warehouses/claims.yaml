@@ -1,0 +1,23 @@
+# Warehouse for the claims pipeline. Subscribes to git commits on the
+# claims/ directory — anything that changes a claim YAML produces freight
+# eligible for the claims-* Stages.
+#
+# Crossplane Compositions live in framework/ but render to platform/
+# crossplane/. A Composition change should also propagate through this
+# pipeline because it changes how the same claim resolves; that's why
+# framework/platform/compositions and framework/platform/xrd are also
+# in includePaths.
+apiVersion: kargo.akuity.io/v1alpha1
+kind: Warehouse
+metadata:
+  name: claims
+  namespace: kargo-claims
+spec:
+  subscriptions:
+    - git:
+        repoURL: https://github.com/<repo>
+        branch: main
+        includePaths:
+          - "3-crossplane+helm/claims/**"
+          - "framework/platform/compositions/**"
+          - "framework/platform/xrd/database.cue"

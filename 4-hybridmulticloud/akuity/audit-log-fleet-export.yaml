@@ -1,0 +1,109 @@
+# Tier-4 fleet-wide audit-log export.
+#
+# Three regional streams + one aggregation destination. The regional streams
+# carry an extra `region` label so the SIEM can filter (eu-data-residency,
+# us-only investigations, etc.). The aggregation destination is what the
+# weekly-incident-summary task queries to produce its cross-region view.
+---
+apiVersion: akuity.io/v1
+kind: OrganizationStreamingDestination
+metadata:
+  name: audit-log-us-east
+spec:
+  destination:
+    type: webhook
+    webhook:
+      url: https://siem.<your-org>.com/api/v1/events?region=us-east
+      tokenSecretRef:
+        name: audit-log-siem-token-us-east
+        namespace: argocd
+        key: token
+  filters:
+    - resource: "argocd.*"
+      verbs: ["create", "update", "delete", "sync"]
+      labelSelector:
+        region: us-east
+    - resource: "kargo.*"
+      verbs: ["promote", "verify"]
+      labelSelector:
+        region: us-east
+  retry:
+    maxAttempts: 5
+    backoffSeconds: 30
+---
+apiVersion: akuity.io/v1
+kind: OrganizationStreamingDestination
+metadata:
+  name: audit-log-eu-west
+spec:
+  destination:
+    type: webhook
+    webhook:
+      # EU residency — separate SIEM endpoint inside the EU AZ.
+      url: https://siem.eu.<your-org>.com/api/v1/events?region=eu-west
+      tokenSecretRef:
+        name: audit-log-siem-token-eu-west
+        namespace: argocd
+        key: token
+  filters:
+    - resource: "argocd.*"
+      verbs: ["create", "update", "delete", "sync"]
+      labelSelector:
+        region: eu-west
+    - resource: "kargo.*"
+      verbs: ["promote", "verify"]
+      labelSelector:
+        region: eu-west
+  retry:
+    maxAttempts: 5
+    backoffSeconds: 30
+---
+apiVersion: akuity.io/v1
+kind: OrganizationStreamingDestination
+metadata:
+  name: audit-log-ap-southeast
+spec:
+  destination:
+    type: webhook
+    webhook:
+      url: https://siem.<your-org>.com/api/v1/events?region=ap-southeast
+      tokenSecretRef:
+        name: audit-log-siem-token-ap-southeast
+        namespace: argocd
+        key: token
+  filters:
+    - resource: "argocd.*"
+      verbs: ["create", "update", "delete", "sync"]
+      labelSelector:
+        region: ap-southeast
+    - resource: "kargo.*"
+      verbs: ["promote", "verify"]
+      labelSelector:
+        region: ap-southeast
+  retry:
+    maxAttempts: 5
+    backoffSeconds: 30
+---
+# Fleet-wide aggregation. Receives a copy of every event across all
+# regions; this is what the weekly-incident-summary task queries.
+apiVersion: akuity.io/v1
+kind: OrganizationStreamingDestination
+metadata:
+  name: audit-log-fleet-aggregator
+spec:
+  destination:
+    type: webhook
+    webhook:
+      url: https://akuity-intel.<your-org>.com/api/v1/audit-aggregator
+      tokenSecretRef:
+        name: audit-log-aggregator-token
+        namespace: argocd
+        key: token
+  # No region filter — receives everything.
+  filters:
+    - resource: "argocd.*"
+    - resource: "kargo.*"
+    - resource: "infra.k8.*"   # Crossplane claim activity (tier 3+)
+  retry:
+    maxAttempts: 10
+    backoffSeconds: 60

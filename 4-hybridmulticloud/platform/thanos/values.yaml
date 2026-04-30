@@ -1,0 +1,61 @@
+# Thanos values for tier 4 — fleet-wide metric federation across regional
+# Prometheus instances. Each regional cluster's kube-prometheus-stack ships
+# with a Thanos sidecar; the central Thanos receiver/query (deployed here)
+# aggregates them.
+#
+# This is what makes the "weekly fleet incident summary" task work — it
+# queries one PromQL endpoint and gets every region's data.
+
+receiver:
+  enabled: true
+  replicaCount: 3   # one per region; replication factor 2 across them
+  persistence:
+    enabled: true
+    size: 100Gi
+  retention:
+    resolutionRaw: 30d
+    resolution5m: 90d
+    resolution1h: 1y
+  hashringConfigs:
+    hashrings:
+      - hashring: default
+        algorithm: ketama
+        endpoints:
+          - thanos-receiver-0.thanos-receiver-headless.monitoring.svc.cluster.local:10901
+          - thanos-receiver-1.thanos-receiver-headless.monitoring.svc.cluster.local:10901
+          - thanos-receiver-2.thanos-receiver-headless.monitoring.svc.cluster.local:10901
+
+query:
+  enabled: true
+  replicaCount: 2
+  stores:
+    - thanos-receiver-0.thanos-receiver-headless.monitoring.svc.cluster.local:10901
+    - thanos-receiver-1.thanos-receiver-headless.monitoring.svc.cluster.local:10901
+    - thanos-receiver-2.thanos-receiver-headless.monitoring.svc.cluster.local:10901
+  # Per-region Prometheus sidecars register here too, via the regional seed
+  # cluster's ApplicationSet that fans the Thanos sidecar config out.
+
+storegateway:
+  enabled: true
+  persistence:
+    enabled: true
+    size: 50Gi
+
+compactor:
+  enabled: true
+  retentionResolutionRaw: 30d
+  retentionResolution5m: 90d
+  retentionResolution1h: 1y
+  persistence:
+    enabled: true
+    size: 50Gi
+
+# Object storage for long-term metric retention. Production deployments
+# point this at the regional S3/GCS/object-store; this default uses
+# in-cluster MinIO for review portability.
+existingObjstoreSecret: thanos-objstore-config
+
+metrics:
+  enabled: true
+  serviceMonitor:
+    enabled: true

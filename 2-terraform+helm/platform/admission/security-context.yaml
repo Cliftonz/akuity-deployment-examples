@@ -1,0 +1,43 @@
+# Runtime mirror of the workload-hardening rules from policy/security.rego:
+# securityContext, probes, no SA token automount.
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingAdmissionPolicy
+metadata:
+  name: require-pod-security
+spec:
+  failurePolicy: Fail
+  matchConstraints:
+    resourceRules:
+      - apiGroups: ["apps"]
+        apiVersions: ["v1"]
+        operations: ["CREATE", "UPDATE"]
+        resources: ["deployments", "statefulsets", "daemonsets"]
+  validations:
+    - expression: "object.spec.template.spec.?securityContext.?runAsNonRoot.orValue(false) == true"
+      message: "spec.template.spec.securityContext.runAsNonRoot must be true"
+      reason: Invalid
+    - expression: |
+        !object.spec.template.spec.containers.exists(c,
+          c.?securityContext.?allowPrivilegeEscalation.orValue(true) != false ||
+          c.?securityContext.?readOnlyRootFilesystem.orValue(false) != true ||
+          !has(c.livenessProbe) || !has(c.readinessProbe)
+        )
+      message: "Every container needs allowPrivilegeEscalation=false, readOnlyRootFilesystem=true, plus liveness + readiness probes"
+      reason: Invalid
+    - expression: "object.spec.template.spec.?automountServiceAccountToken.orValue(true) == false"
+      message: "automountServiceAccountToken must be false — give the workload a dedicated SA and only the rights it actually needs"
+      reason: Invalid
+---
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingAdmissionPolicyBinding
+metadata:
+  name: require-pod-security
+spec:
+  policyName: require-pod-security
+  validationActions: [Audit]   # tier 1: Audit-only — log violations, do not block
+  matchResources:
+    namespaceSelector:
+      matchExpressions:
+        - key: kubernetes.io/metadata.name
+          operator: NotIn
+          values: [kube-system, ingress-nginx, cert-manager, argocd, kargo, kargo-simple]

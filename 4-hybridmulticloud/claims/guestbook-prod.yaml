@@ -1,0 +1,23 @@
+# The prod claim is identical in shape to tier 3 — same kind, same fields,
+# same standards. What changes is what's behind it: the regional seed
+# cluster's EnvironmentConfig declares a provider (aws / gcp / onprem),
+# Crossplane's compositionSelector matches that provider, and the right
+# Composition runs locally. The app team writes this file once; the
+# platform team makes it work on three clouds.
+#
+# The Argo CD ApplicationSet cluster generator at
+# argocd/applicationsets/regional-rollout-prod.yaml fans this claim
+# across each regional prod cluster.
+apiVersion: infra.k8/v1alpha1
+kind: XDatabase
+metadata:
+  name: guestbook-prod
+spec:
+  name: guestbook-prod
+  engine: yugabytedb
+  version: "2.21"
+  size: large
+  storageGB: 200
+  tier: production
+  cluster: prod-fleet
+  owner: guestbook-team

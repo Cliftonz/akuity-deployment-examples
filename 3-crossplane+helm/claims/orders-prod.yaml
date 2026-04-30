@@ -1,0 +1,13 @@
+apiVersion: infra.k8/v1alpha1
+kind: XDatabase
+metadata:
+  name: orders-prod
+spec:
+  name: orders-prod
+  engine: postgres
+  version: "16"
+  size: large
+  storageGB: 500
+  tier: production
+  cluster: hub
+  owner: orders-team

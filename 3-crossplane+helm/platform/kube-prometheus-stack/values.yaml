@@ -1,0 +1,85 @@
+# kube-prometheus-stack values for tier 1.
+#
+# Tier 1 ships the basic monitoring substrate — Prometheus + Alertmanager +
+# Grafana + node-exporter + kube-state-metrics. The over-provisioned-workloads
+# task at tier 3 reads from this Prometheus; the alert routing flows into the
+# argocd-notifications-cm Slack webhook.
+#
+# Resource sizes are tuned for a single workload cluster; tier 4 expands to a
+# Thanos sidecar + receiver topology for fleet-wide aggregation.
+
+fullnameOverride: kps
+
+prometheus:
+  prometheusSpec:
+    retention: 15d
+    retentionSize: 40GiB
+    resources:
+      requests:
+        cpu: 500m
+        memory: 2Gi
+      limits:
+        cpu: 1500m
+        memory: 4Gi
+    storageSpec:
+      volumeClaimTemplate:
+        spec:
+          accessModes: [ReadWriteOnce]
+          resources:
+            requests:
+              storage: 50Gi
+    # Match every ServiceMonitor on the cluster, not only those in the
+    # monitoring namespace. App teams put ServiceMonitors next to their
+    # charts and expect them to be picked up automatically.
+    serviceMonitorSelectorNilUsesHelmValues: false
+    podMonitorSelectorNilUsesHelmValues: false
+    ruleSelectorNilUsesHelmValues: false
+
+alertmanager:
+  alertmanagerSpec:
+    resources:
+      requests:
+        cpu: 50m
+        memory: 128Mi
+      limits:
+        cpu: 200m
+        memory: 256Mi
+  config:
+    route:
+      receiver: slack
+      group_by: [alertname, severity]
+      group_wait: 30s
+      repeat_interval: 4h
+    receivers:
+      - name: slack
+        slack_configs:
+          - api_url_file: /etc/alertmanager/secrets/slack/url
+            channel: '<slack-channel>'
+            send_resolved: true
+            title: '{{ .GroupLabels.alertname }} ({{ .Status }})'
+            text: |
+              {{ range .Alerts }}
+              *{{ .Annotations.summary }}*
+              {{ .Annotations.description }}
+              {{ end }}
+
+grafana:
+  enabled: true
+  adminPassword: $GRAFANA_ADMIN_PASSWORD  # supplied via ESO
+  persistence:
+    enabled: true
+    size: 10Gi
+  defaultDashboardsEnabled: true
+  # Akuity Intelligence + Grafana split: Akuity owns the Argo CD / Kargo /
+  # promotion view; Grafana owns the cluster-resource view. Both subscribe
+  # to the same Prometheus.
+  sidecar:
+    dashboards:
+      enabled: true
+      label: grafana_dashboard
+
+nodeExporter:
+  enabled: true
+
+kube-state-metrics:
+  enabled: true

@@ -1,0 +1,18 @@
+# The issuer is in its own Argo CD Application (a child of cert-manager) so
+# it can wait for cert-manager's CRDs to land first. Bundling them into a
+# single sync is the source of every "ClusterIssuer kind not found" flap on
+# fresh clusters.
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: letsencrypt-staging
+spec:
+  acme:
+    server: https://acme-staging-v02.api.letsencrypt.org/directory
+    email: platform@example.com
+    privateKeySecretRef:
+      name: letsencrypt-staging-account-key
+    solvers:
+      - http01:
+          ingress:
+            class: nginx

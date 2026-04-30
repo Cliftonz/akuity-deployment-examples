@@ -1,0 +1,11 @@
+namespace: guestbook-prod
+
+replicaCount: 3
+
+image:
+  tag: "0.0.1"
+
+database:
+  secretName: guestbook-yugabyte-prod
+
+# eu-west lands on GCP via the regional seed's EnvironmentConfig.

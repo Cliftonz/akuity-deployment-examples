@@ -1,0 +1,13 @@
+apiVersion: infra.k8/v1alpha1
+kind: XNamespace
+metadata:
+  name: metallb-system
+spec:
+  name: metallb-system
+  tier: dev
+  cluster: demo
+  owner: platform-team
+  labels:
+    pod-security.kubernetes.io/enforce: privileged
+    pod-security.kubernetes.io/audit: privileged
+    pod-security.kubernetes.io/warn: privileged

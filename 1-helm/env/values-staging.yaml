@@ -1,0 +1,6 @@
+namespace: guestbook-staging
+
+replicaCount: 2
+
+image:
+  tag: "0.0.1"

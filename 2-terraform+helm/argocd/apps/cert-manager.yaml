@@ -1,0 +1,87 @@
+# Two Applications: the chart install, and the issuers that depend on it.
+# Sync waves alone don't help across Applications, so the issuer App leans on
+# `SkipDryRunOnMissingResource=true` + `Replace=true` to ride out the few
+# seconds where the ClusterIssuer kind isn't yet established on a fresh cluster.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: cert-manager
+  namespace: argocd
+  annotations:
+    notifications.argoproj.io/subscribe.on-sync-failed.slack: <slack-channel>
+    notifications.argoproj.io/subscribe.on-health-degraded.slack: <slack-channel>
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: platform
+  sources:
+    - repoURL: https://github.com/<repo>
+      targetRevision: HEAD
+      path: 2-terraform+helm/platform/cert-manager
+      directory:
+        include: namespace.yaml
+    - repoURL: https://charts.jetstack.io
+      chart: cert-manager
+      targetRevision: v1.20.2
+      helm:
+        releaseName: cert-manager
+        valueFiles:
+          - $values/platform/cert-manager/values.yaml
+    - repoURL: https://github.com/<repo>
+      targetRevision: HEAD
+      ref: values
+  destination:
+    name: in-cluster
+    namespace: cert-manager
+  syncPolicy:
+    automated:
+      prune: false
+      selfHeal: false
+    retry:
+      limit: 5
+      backoff:
+        duration: 30s
+        factor: 2
+        maxDuration: 5m
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true
+---
+# Issuers ship in their own Application so they can wait for the chart's CRDs.
+# Wave 10 + the dry-run skip handle the first-bootstrap window where the
+# ClusterIssuer kind doesn't exist yet.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: cert-manager-issuers
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "10"
+    notifications.argoproj.io/subscribe.on-sync-failed.slack: <slack-channel>
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: platform
+  source:
+    repoURL: https://github.com/<repo>
+    targetRevision: HEAD
+    path: 2-terraform+helm/platform/cert-manager
+    directory:
+      include: cluster-issuer.yaml
+  destination:
+    name: in-cluster
+    namespace: cert-manager
+  syncPolicy:
+    automated:
+      prune: false
+      selfHeal: false
+    retry:
+      limit: 5
+      backoff:
+        duration: 30s
+        factor: 2
+        maxDuration: 5m
+    syncOptions:
+      - ServerSideApply=true
+      - SkipDryRunOnMissingResource=true
+      - Replace=true

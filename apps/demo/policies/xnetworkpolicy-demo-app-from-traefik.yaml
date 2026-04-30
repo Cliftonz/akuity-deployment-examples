@@ -1,0 +1,34 @@
+apiVersion: infra.k8/v1alpha1
+kind: XNetworkPolicy
+metadata:
+  name: demo-app-from-traefik
+spec:
+  name: demo-app-from-traefik
+  namespace: demo-app
+  tier: dev
+  cluster: demo
+  owner: platform-team
+  policy:
+    podSelector: {}
+    policyTypes:
+      - Ingress
+      - Egress
+    ingress:
+      - from:
+          - namespaceSelector:
+              matchLabels:
+                kubernetes.io/metadata.name: traefik
+    egress:
+      - to:
+          - namespaceSelector: {}
+        ports:
+          - port: 53
+            protocol: UDP
+          - port: 53
+            protocol: TCP
+      - to:
+          - ipBlock:
+              cidr: 0.0.0.0/0
+        ports:
+          - port: 443
+            protocol: TCP

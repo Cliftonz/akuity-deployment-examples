@@ -1,0 +1,13 @@
+apiVersion: infra.k8/v1alpha1
+kind: XDatabase
+metadata:
+  name: guestbook-prod
+spec:
+  name: guestbook-prod
+  engine: postgres
+  version: "16"
+  size: large
+  storageGB: 200
+  tier: production
+  cluster: hub
+  owner: guestbook-team

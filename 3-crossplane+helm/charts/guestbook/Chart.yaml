@@ -1,0 +1,6 @@
+apiVersion: v2
+name: guestbook
+description: Guestbook reference app — tier 1 of the GitOps maturity ladder.
+type: application
+version: 0.1.0
+appVersion: "0.0.1"

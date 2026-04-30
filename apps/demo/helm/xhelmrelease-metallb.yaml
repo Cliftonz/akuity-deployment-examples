@@ -1,0 +1,18 @@
+apiVersion: infra.k8/v1alpha1
+kind: XHelmRelease
+metadata:
+  name: metallb
+spec:
+  name: metallb
+  namespace: metallb-system
+  chart:
+    name: metallb
+    repository: https://metallb.github.io/metallb
+    version: 0.15.3
+  values:
+    speaker:
+      frr:
+        enabled: false
+  tier: dev
+  cluster: demo
+  owner: platform-team

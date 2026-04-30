@@ -1,0 +1,31 @@
+apiVersion: infra.k8/v1alpha1
+kind: XHelmRelease
+metadata:
+  name: traefik
+spec:
+  name: traefik
+  namespace: traefik
+  chart:
+    name: traefik
+    repository: https://traefik.github.io/charts
+    version: 33.2.1
+  values:
+    service:
+      type: LoadBalancer
+      annotations:
+        metallb.universe.tf/address-pool: lan
+        metallb.universe.tf/loadBalancerIPs: 192.0.2.240
+    ports:
+      web:
+        forwardedHeaders:
+          trustedIPs:
+            - 192.0.2.0/24
+      websecure:
+        forwardedHeaders:
+          trustedIPs:
+            - 192.0.2.0/24
+    ingressClass:
+      isDefaultClass: true
+  tier: dev
+  cluster: demo
+  owner: platform-team

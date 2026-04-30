@@ -1,0 +1,12 @@
+# Disruption budget. With dev's single replica it's a no-op, but staging
+# (2) and prod (3) take it seriously. Stops a node drain from knocking the
+# whole service down at once.
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: guestbook
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: guestbook

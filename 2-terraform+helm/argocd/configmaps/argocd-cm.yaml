@@ -1,0 +1,97 @@
+# Argo CD config — Dex / OIDC connector wiring.
+#
+# Tier 1 status: DESIGNED, NOT WIRED. The Dex connector blocks below are a
+# fully-formed reference; replace placeholder OAuth client IDs/secrets with
+# real values to activate. Akuity-managed Dex is the production answer at
+# this tier; this ConfigMap exists so SE conversations can show *what* gets
+# wired, not just *that* SSO is part of the tier.
+#
+# Connector list mirrors docs/tier-1-helm.md ("Okta, Entra, Google Workspace,
+# GitHub"). VCS-as-OIDC (GitHub) is the user's bonus #4 — included here as a
+# first-class connector.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: argocd-cm
+  namespace: argocd
+  labels:
+    app.kubernetes.io/name: argocd-cm
+    app.kubernetes.io/part-of: argocd
+data:
+  url: https://argocd.<your-domain>
+
+  # Dex connector configuration. Akuity-managed Argo CD instances run Dex
+  # for you; self-hosted instances need this block in argocd-cm.
+  dex.config: |
+    connectors:
+      # GitHub as OIDC provider (VCS-as-OIDC; bonus #4).
+      - type: github
+        id: github
+        name: GitHub
+        config:
+          clientID: <github-oauth-app-client-id>
+          clientSecret: $argocd-secret:dex.github.clientSecret
+          orgs:
+            - name: <your-org>
+              teams:
+                - platform-engineering
+                - product-developers
+          # Pull team membership into id_token so AppProject roles can match
+          # on `<your-org>:platform-engineering` group claim.
+          loadAllGroups: false
+          teamNameField: slug
+          useLoginAsID: false
+
+      # Optional: Okta as primary corporate IdP. Enable by uncommenting +
+      # supplying clientID/clientSecret. SAML and OIDC both supported; this
+      # block uses OIDC.
+      # - type: oidc
+      #   id: okta
+      #   name: Okta
+      #   config:
+      #     issuer: https://<your-org>.okta.com
+      #     clientID: <okta-client-id>
+      #     clientSecret: $argocd-secret:dex.okta.clientSecret
+      #     redirectURI: https://argocd.<your-domain>/api/dex/callback
+      #     scopes:
+      #       - openid
+      #       - profile
+      #       - email
+      #       - groups
+
+      # Optional: Microsoft Entra (Azure AD).
+      # - type: microsoft
+      #   id: entra
+      #   name: Microsoft Entra
+      #   config:
+      #     clientID: <entra-app-id>
+      #     clientSecret: $argocd-secret:dex.entra.clientSecret
+      #     redirectURI: https://argocd.<your-domain>/api/dex/callback
+      #     tenant: <entra-tenant-id>
+      #     groups:
+      #       - <your-org>-platform-engineering
+      #       - <your-org>-product-developers
+
+      # Optional: Google Workspace.
+      # - type: google
+      #   id: google
+      #   name: Google
+      #   config:
+      #     clientID: <google-client-id>
+      #     clientSecret: $argocd-secret:dex.google.clientSecret
+      #     redirectURI: https://argocd.<your-domain>/api/dex/callback
+      #     hostedDomains:
+      #       - <your-org>.com
+      #     scopes:
+      #       - openid
+      #       - profile
+      #       - email
+      #       - https://www.googleapis.com/auth/admin.directory.group.readonly
+      #     serviceAccountFilePath: /tmp/google-svc.json
+      #     adminEmail: <admin-email>@<your-org>.com
+
+  # AppProject role policy is enforced via the per-AppProject `roles:`
+  # blocks (see argocd/projects/{platform,business}.yaml). The default
+  # policy below applies to authenticated users with no role membership —
+  # readonly is the safe default; tier 0 had no role bindings at all.
+  policy.default: role:readonly

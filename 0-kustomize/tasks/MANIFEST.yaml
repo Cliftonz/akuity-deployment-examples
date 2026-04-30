@@ -1,0 +1,13 @@
+# Tier-0 task manifest. One scheduled report — Argo CD sync-status digest —
+# delivered to the founders' Slack channel weekly. Tier-0 customers don't
+# have an ops team to run dashboards; the report comes to them.
+slackChannel: "#deploys"
+tasks:
+  - file: argocd/sync-status-report.md
+    title: Weekly Argo CD sync-status report
+    schedule: "0 9 * * 1"  # Monday 09:00
+    context: argocd
+    deliverTo:
+      kind: slack
+      channel: "#deploys"
+    owner: founder

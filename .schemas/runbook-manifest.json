@@ -1,0 +1,43 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Akuity Intelligence runbook manifest",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["slackChannel", "runbooks"],
+  "properties": {
+    "slackChannel": { "type": "string" },
+    "runbooks": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["file", "title", "trigger", "severity", "owner"],
+        "properties": {
+          "file": { "type": "string" },
+          "title": { "type": "string" },
+          "trigger": {
+            "type": "object",
+            "additionalProperties": true,
+            "required": ["resource", "state"],
+            "properties": {
+              "resource": { "type": "string" },
+              "state": { "type": "string" },
+              "reasonContains": { "type": "string" },
+              "durationSeconds": { "type": "integer" }
+            }
+          },
+          "severity": { "enum": ["sev1", "sev2", "sev3"] },
+          "owner": { "type": "string" },
+          "autoclose": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "condition": { "type": "string" },
+              "stableForSeconds": { "type": "integer" }
+            }
+          }
+        }
+      }
+    }
+  }
+}

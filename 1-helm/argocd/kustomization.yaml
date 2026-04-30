@@ -1,0 +1,17 @@
+# Bootstrap entrypoint. `kubectl apply -k argocd/` lands the AppProjects, the
+# ApplicationSet, and the platform Apps. Argo CD then takes over and reconciles
+# everything else from git — the Kargo CRs come along for the ride via the
+# kargo-pipelines Application.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - projects/platform.yaml
+  - projects/business.yaml
+  - applicationsets/business-apps.yaml
+  - apps/kube-prometheus-stack.yaml   # monitoring (Prometheus + Grafana + Alertmanager)
+  - apps/admission-policies.yaml      # ValidatingAdmissionPolicy + Binding
+  - apps/argocd-config.yaml          # syncs configmaps/ — Dex + Notifications
+  - apps/ingress-nginx.yaml
+  - apps/cert-manager.yaml
+  - apps/kargo-pipelines.yaml

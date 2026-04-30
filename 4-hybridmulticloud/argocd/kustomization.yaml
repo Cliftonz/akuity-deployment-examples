@@ -1,0 +1,23 @@
+# Tier-4 bootstrap. `kubectl apply -k argocd/` lands the AppProjects, both
+# ApplicationSets per pipeline, and the platform Apps. Argo CD takes over.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - projects/platform.yaml
+  - projects/business.yaml
+  # API CD pipeline (Crossplane claims)
+  - applicationsets/claim-sync-nonprod.yaml      # dev + staging (git-files generator)
+  - applicationsets/claim-sync-prod.yaml         # prod (cluster generator across regional seeds)
+  # App CD pipeline (Helm chart)
+  - applicationsets/business-apps.yaml           # dev + staging (list generator)
+  - applicationsets/regional-rollout-prod.yaml   # prod (cluster generator, regional fan-out)
+  # Platform Applications
+  - apps/kube-prometheus-stack.yaml   # monitoring (with Thanos sidecar via per-region overlay)
+  - apps/loki.yaml                    # log aggregation
+  - apps/thanos.yaml                  # fleet-wide metric federation
+  - apps/admission-policies.yaml      # ValidatingAdmissionPolicy + Binding (Enforce)
+  - apps/argocd-config.yaml           # Dex + Notifications ConfigMaps
+  - apps/ingress-nginx.yaml
+  - apps/cert-manager.yaml
+  - apps/kargo-pipelines.yaml

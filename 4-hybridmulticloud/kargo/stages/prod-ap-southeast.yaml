@@ -1,0 +1,32 @@
+apiVersion: kargo.akuity.io/v1alpha1
+kind: Stage
+metadata:
+  name: prod-ap-southeast
+  namespace: kargo-simple
+  # No autoPromotion — independent regional gate. Green ap-southeast promotion
+  # does not unblock eu-west or ap-southeast.
+spec:
+  requestedFreight:
+    - origin:
+        kind: Warehouse
+        name: guestbook
+      sources:
+        stages:
+          - staging
+  verification:
+    analysisTemplates:
+      - name: guestbook-http-probe
+    args:
+      - name: service-name
+        value: guestbook
+      - name: service-namespace
+        value: guestbook-prod
+  promotionTemplate:
+    spec:
+      # Steps come from the parameterized PromotionTask; we only supply
+      # the region-specific input.
+      taskRef:
+        name: regional-promote
+      vars:
+        - name: region
+          value: ap-southeast

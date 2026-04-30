@@ -1,0 +1,65 @@
+# Claim-promotion Stage for dev. Reads commits from the claims Warehouse
+# and hydrates the dev claim into the env/dev branch's rendered tree.
+#
+# Note: this Stage promotes the **claim YAML** plus the rendered XRD +
+# Composition output. It does NOT promote the Helm chart — that's the
+# kargo-simple/dev Stage's job.
+apiVersion: kargo.akuity.io/v1alpha1
+kind: Stage
+metadata:
+  name: claims-dev
+  namespace: kargo-claims
+spec:
+  requestedFreight:
+    - origin:
+        kind: Warehouse
+        name: claims
+      sources:
+        direct: true
+  promotionTemplate:
+    spec:
+      vars:
+        - name: gitRepo
+          value: https://github.com/<repo>
+        - name: env
+          value: dev
+      steps:
+        - uses: git-clone
+          config:
+            repoURL: ${{ vars.gitRepo }}
+            checkout:
+              - branch: main
+                path: ./src
+              - branch: env/${{ vars.env }}
+                create: true
+                path: ./out
+        # Render the framework's CUE (XRDs + Compositions) for the demo cluster.
+        # In a real customer setup this is `make export-cluster CLUSTER=<env>`
+        # against framework/composites/<env>/. The output lands in
+        # platform/crossplane/{xrds,compositions}/ which we then copy.
+        - uses: copy
+          config:
+            inPath: ./src/3-crossplane+helm/claims/guestbook-${{ vars.env }}.yaml
+            outPath: ./out/rendered/${{ vars.env }}/claims/guestbook-${{ vars.env }}.yaml
+        - uses: copy
+          config:
+            inPath: ./src/platform/crossplane
+            outPath: ./out/rendered/${{ vars.env }}/platform/crossplane
+        - uses: git-commit
+          as: commit
+          config:
+            path: ./out
+            message: |
+              chore(claims): promote ${{ vars.env }} claim + XRD/Compositions
+              ${{ commitFrom("https://github.com/<repo>", "main").ID }}
+        - uses: git-push
+          config:
+            path: ./out
+            targetBranch: env/${{ vars.env }}
+        - uses: argocd-update
+          config:
+            apps:
+              - name: claim-guestbook-${{ vars.env }}
+                sources:
+                  - repoURL: ${{ vars.gitRepo }}
+                    desiredRevision: ${{ outputs.commit.commit }}

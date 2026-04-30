@@ -1,0 +1,40 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(make validate *)",
+      "Bash(cp -R /Users/zacclifton/Documents/vscode/k8-gitops-portfolio/tmp/kargo-quickstart-template /Users/zacclifton/Documents/vscode/k8-gitops-portfolio/0-kustomize)",
+      "Bash(rm -rf .git tasks runbooks scripts policy .schemas .devcontainer .github akuity .vscode .schemas docs README.md)",
+      "Bash(sed -i '' 's|path: platform/|path: 0-kustomize/platform/|g; s|path: kargo$|path: 0-kustomize/kargo|g' /Users/zacclifton/Documents/vscode/k8-gitops-portfolio/0-kustomize/argocd/apps/*.yaml)",
+      "Bash(sed -i '' \"s|- path: apps/guestbook/envs/dev|- path: 0-kustomize/apps/guestbook/envs/dev|; s|- path: apps/guestbook/envs/staging|- path: 0-kustomize/apps/guestbook/envs/staging|; s|- path: apps/guestbook/envs/prod|- path: 0-kustomize/apps/guestbook/envs/prod|; s|path: 'rendered/{{index .path.segments 3}}'|path: 'rendered/{{index .path.segments 3}}'|\" /Users/zacclifton/Documents/vscode/k8-gitops-portfolio/0-kustomize/argocd/applicationsets/business-apps.yaml)",
+      "Bash(sed -i '' 's|prod-us-east|prod-eu-west|g' /Users/zacclifton/Documents/vscode/k8-gitops-portfolio/4-hybridmulticloud/kargo/stages/prod-eu-west.yaml)",
+      "Bash(sed -i '' 's|prod-us-east|prod-ap-southeast|g' /Users/zacclifton/Documents/vscode/k8-gitops-portfolio/4-hybridmulticloud/kargo/stages/prod-ap-southeast.yaml)",
+      "Read(//Users/zacclifton/Documents/vscode/kargo-quickstart-template/**)",
+      "Bash(cue vet *)",
+      "Bash(cp /Users/zacclifton/Documents/vscode/kargo-quickstart-template/.schemas/*.json /Users/zacclifton/Documents/vscode/k8-gitops-portfolio/.schemas/)",
+      "Bash(cp /Users/zacclifton/Documents/vscode/kargo-quickstart-template/scripts/register-intelligence.sh /Users/zacclifton/Documents/vscode/k8-gitops-portfolio/scripts/)",
+      "Bash(chmod +x /Users/zacclifton/Documents/vscode/k8-gitops-portfolio/scripts/register-intelligence.sh)",
+      "Bash(cp -R /Users/zacclifton/Documents/vscode/k8-gitops-portfolio/1-helm/tasks/* /Users/zacclifton/Documents/vscode/k8-gitops-portfolio/2-terraform+helm/tasks/)",
+      "Bash(cp -R /Users/zacclifton/Documents/vscode/k8-gitops-portfolio/1-helm/runbooks/* /Users/zacclifton/Documents/vscode/k8-gitops-portfolio/2-terraform+helm/runbooks/)",
+      "Bash(cp -R /Users/zacclifton/Documents/vscode/k8-gitops-portfolio/3-crossplane+argocd+helm/tasks/* /Users/zacclifton/Documents/vscode/k8-gitops-portfolio/4-hybridmulticloud/tasks/)",
+      "Bash(cp -R /Users/zacclifton/Documents/vscode/k8-gitops-portfolio/3-crossplane+argocd+helm/runbooks/* /Users/zacclifton/Documents/vscode/k8-gitops-portfolio/4-hybridmulticloud/runbooks/)",
+      "Bash(cp -r /Users/zacclifton/Documents/vscode/k8-gitops-portfolio/2-terraform+helm/platform/loki/. /Users/zacclifton/Documents/vscode/k8-gitops-portfolio/3-crossplane+helm/platform/loki/)",
+      "Bash(sed -i '' 's|2-terraform+helm/platform/loki|3-crossplane+helm/platform/loki|g' /Users/zacclifton/Documents/vscode/k8-gitops-portfolio/3-crossplane+helm/argocd/apps/loki.yaml)",
+      "Bash(cp -r /Users/zacclifton/Documents/vscode/k8-gitops-portfolio/3-crossplane+helm/platform/loki/. /Users/zacclifton/Documents/vscode/k8-gitops-portfolio/4-hybridmulticloud/platform/loki/)",
+      "Bash(sed -i '' 's|3-crossplane+helm/platform/loki|4-hybridmulticloud/platform/loki|g' /Users/zacclifton/Documents/vscode/k8-gitops-portfolio/4-hybridmulticloud/argocd/apps/loki.yaml)",
+      "Bash(sed -i '' 's|3-crossplane+helm|4-hybridmulticloud|g' /Users/zacclifton/Documents/vscode/k8-gitops-portfolio/4-hybridmulticloud/kargo/stages/claims-dev.yaml)",
+      "Bash(sed -i '' 's|3-crossplane+helm|4-hybridmulticloud|g' /Users/zacclifton/Documents/vscode/k8-gitops-portfolio/4-hybridmulticloud/kargo/stages/claims-staging.yaml)",
+      "Bash(sed -i '' 's|prod-us-east|prod-eu-west|g' /Users/zacclifton/Documents/vscode/k8-gitops-portfolio/4-hybridmulticloud/kargo/stages/claims-prod-eu-west.yaml)",
+      "Bash(sed -i '' 's|prod-us-east|prod-ap-southeast|g' /Users/zacclifton/Documents/vscode/k8-gitops-portfolio/4-hybridmulticloud/kargo/stages/claims-prod-ap-southeast.yaml)",
+      "Bash(sed -i '' 's|prod-us-east|prod-eu-west|g; s|us-east|eu-west|g' /Users/zacclifton/Documents/vscode/k8-gitops-portfolio/4-hybridmulticloud/kargo/stages/prod-eu-west.yaml)",
+      "Bash(sed -i '' 's|prod-us-east|prod-ap-southeast|g; s|us-east|ap-southeast|g' /Users/zacclifton/Documents/vscode/k8-gitops-portfolio/4-hybridmulticloud/kargo/stages/prod-ap-southeast.yaml)",
+      "Bash(chmod +x /Users/zacclifton/Documents/vscode/k8-gitops-portfolio/ci/scripts/check-shared-files-identical.sh)",
+      "Bash(/Users/zacclifton/Documents/vscode/k8-gitops-portfolio/ci/scripts/check-shared-files-identical.sh)",
+      "Bash(make check-shared *)"
+    ],
+    "additionalDirectories": [
+      "/Users/zacclifton/Documents/vscode/kargo-quickstart-template/policy/admission",
+      "/Users/zacclifton/Documents/vscode/k8-gitops-portfolio/1-helm/platform/admission",
+      "/Users/zacclifton/Documents/vscode/k8-gitops-portfolio/3-crossplane+helm/claims"
+    ]
+  }
+}

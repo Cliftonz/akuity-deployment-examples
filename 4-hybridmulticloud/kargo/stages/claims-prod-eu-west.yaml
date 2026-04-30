@@ -1,0 +1,60 @@
+# Per-region claim-promotion Stage for prod-eu-west. Independent gate from
+# the other regions — the same prod claim is promoted to each region on
+# its own cadence (regulatory windows, blast-radius management).
+apiVersion: kargo.akuity.io/v1alpha1
+kind: Stage
+metadata:
+  name: claims-prod-eu-west
+  namespace: kargo-claims
+spec:
+  requestedFreight:
+    - origin:
+        kind: Warehouse
+        name: claims
+      sources:
+        stages:
+          - claims-staging
+  promotionTemplate:
+    spec:
+      vars:
+        - name: gitRepo
+          value: https://github.com/<repo>
+        - name: env
+          value: prod-eu-west
+        - name: claimFile
+          value: guestbook-prod
+      steps:
+        - uses: git-clone
+          config:
+            repoURL: ${{ vars.gitRepo }}
+            checkout:
+              - branch: main
+                path: ./src
+              - branch: env/${{ vars.env }}
+                create: true
+                path: ./out
+        - uses: copy
+          config:
+            inPath: ./src/4-hybridmulticloud/claims/${{ vars.claimFile }}.yaml
+            outPath: ./out/rendered/${{ vars.env }}/claims/${{ vars.claimFile }}.yaml
+        - uses: copy
+          config:
+            inPath: ./src/platform/crossplane
+            outPath: ./out/rendered/${{ vars.env }}/platform/crossplane
+        - uses: git-commit
+          as: commit
+          config:
+            path: ./out
+            message: |
+              chore(claims): promote prod claim to ${{ vars.env }}
+        - uses: git-push
+          config:
+            path: ./out
+            targetBranch: env/${{ vars.env }}
+        - uses: argocd-update
+          config:
+            apps:
+              - name: claim-guestbook-${{ vars.env }}
+                sources:
+                  - repoURL: ${{ vars.gitRepo }}
+                    desiredRevision: ${{ outputs.commit.commit }}

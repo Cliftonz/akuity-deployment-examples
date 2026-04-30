@@ -1,0 +1,21 @@
+# XDatabase claim for guestbook (dev). The platform team owns the XRD
+# (framework/platform/xrd/database.cue) and the Composition
+# (framework/platform/compositions/database.cue). The app team writes
+# only this file to get a managed Postgres.
+#
+# At apply time, Crossplane composes a provider-helm Release of
+# bitnami/postgresql in the databases namespace and surfaces a
+# connection Secret the app reads via envFrom.
+apiVersion: infra.k8/v1alpha1
+kind: XDatabase
+metadata:
+  name: guestbook-dev
+spec:
+  name: guestbook-dev
+  engine: postgres
+  version: "16"
+  size: small
+  storageGB: 20
+  tier: dev
+  cluster: hub
+  owner: guestbook-team

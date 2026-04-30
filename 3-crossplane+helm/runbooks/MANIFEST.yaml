@@ -1,0 +1,87 @@
+# Tier-3 runbook manifest. Drops the tier-2 wild-west drift runbook (no
+# longer applicable — Crossplane Composition produces the connection
+# Secret deterministically) and adds a Crossplane-claim-stuck runbook
+# for the most common tier-3 incident: a claim that won't reach Ready
+# because the underlying provider is unhealthy.
+slackChannel: "#deploys"
+runbooks:
+  - file: argocd/app-sync-failure.md
+    title: Argo CD Application sync failed
+    trigger:
+      resource: argoproj.io/Application
+      state: SyncFailed
+      durationSeconds: 60
+    severity: sev2
+    owner: platform-team
+    autoclose:
+      condition: status.sync.status == 'Synced'
+      stableForSeconds: 300
+
+  - file: argocd/app-degraded.md
+    title: Argo CD Application Health = Degraded
+    trigger:
+      resource: argoproj.io/Application
+      state: Degraded
+      durationSeconds: 120
+    severity: sev2
+    owner: platform-team
+    autoclose:
+      condition: status.health.status == 'Healthy'
+      stableForSeconds: 300
+
+  - file: argocd/app-out-of-sync.md
+    title: Argo CD Application stuck OutOfSync (autoSync disabled)
+    trigger:
+      resource: argoproj.io/Application
+      state: OutOfSync
+      durationSeconds: 600
+    severity: sev3
+    owner: platform-team
+
+  - file: pod-issues/image-pull-failure.md
+    title: Pod stuck in ImagePullBackOff
+    trigger:
+      resource: v1/Pod
+      state: ImagePullBackOff
+      durationSeconds: 120
+    severity: sev2
+    owner: platform-team
+
+  - file: pod-issues/pod-health-issues.md
+    title: Pod CrashLoopBackOff
+    trigger:
+      resource: v1/Pod
+      state: CrashLoopBackOff
+      durationSeconds: 180
+    severity: sev2
+    owner: platform-team
+
+  - file: security/rbac-denials.md
+    title: RBAC access denied (audit log)
+    trigger:
+      resource: audit.k8s.io/Event
+      state: Forbidden
+      durationSeconds: 0
+    severity: sev3
+    owner: security-team
+
+  - file: infra/pvc-binding-failure.md
+    title: PersistentVolumeClaim stuck Pending
+    trigger:
+      resource: v1/PersistentVolumeClaim
+      state: Pending
+      durationSeconds: 300
+    severity: sev2
+    owner: platform-team
+
+  - file: platform/crossplane-claim-stuck-pending.md
+    title: Crossplane XDatabase claim stuck Pending / Synced=False
+    trigger:
+      resource: infra.k8/XDatabase
+      state: Pending
+      durationSeconds: 300
+    severity: sev1
+    owner: platform-team
+    autoclose:
+      condition: status.conditions[?(@.type=='Ready')].status == 'True'
+      stableForSeconds: 300

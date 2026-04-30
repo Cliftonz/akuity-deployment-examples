@@ -1,0 +1,52 @@
+# kube-prometheus-stack: cluster-wide metrics + alerts.
+#
+# Tier 1 introduces monitoring as a platform-team-owned Argo CD Application.
+# The chart's Prometheus is the source for the over-provisioned-workloads
+# task (tier 3) and the regional analysis templates (tier 4). Alertmanager
+# routes into the same Slack channel the Argo CD Notifications ConfigMap
+# uses, so on-call sees a unified stream.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: kube-prometheus-stack
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "-2"
+    notifications.argoproj.io/subscribe.on-sync-failed.slack: <slack-channel>
+    notifications.argoproj.io/subscribe.on-health-degraded.slack: <slack-channel>
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: platform
+  sources:
+    - repoURL: https://prometheus-community.github.io/helm-charts
+      chart: kube-prometheus-stack
+      targetRevision: 62.7.0
+      helm:
+        releaseName: kps
+        valueFiles:
+          - $values/4-hybridmulticloud/platform/kube-prometheus-stack/values.yaml
+    - repoURL: https://github.com/<repo>
+      targetRevision: HEAD
+      ref: values
+    - repoURL: https://github.com/<repo>
+      targetRevision: HEAD
+      path: 4-hybridmulticloud/platform/kube-prometheus-stack
+      directory:
+        include: 'namespace.yaml'
+  destination:
+    name: in-cluster
+    namespace: monitoring
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    retry:
+      limit: 5
+      backoff:
+        duration: 30s
+        factor: 2
+        maxDuration: 5m
+    syncOptions:
+      - ServerSideApply=true
+      - CreateNamespace=true

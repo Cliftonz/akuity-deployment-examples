@@ -1,0 +1,16 @@
+# Auto-promotion policy lives at the ProjectConfig level in Kargo v1.x — not
+# on per-Stage annotations. Anything not listed here defaults to manual,
+# which is what we want for staging and prod.
+#
+# `dev` auto-promotes from the Warehouse: when a new image lands in
+# ghcr.io/<user>/guestbook, dev picks it up without anyone clicking. Past
+# dev, every promotion is a deliberate human action in the Kargo UI.
+apiVersion: kargo.akuity.io/v1alpha1
+kind: ProjectConfig
+metadata:
+  name: kargo-simple
+  namespace: kargo-simple
+spec:
+  promotionPolicies:
+    - stage: dev
+      autoPromotionEnabled: true

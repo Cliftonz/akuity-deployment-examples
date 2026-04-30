@@ -1,0 +1,67 @@
+# Tier 3 API CD pipeline. The platform team's "API surface" — XDatabase
+# claims — is reconciled here. Each YAML file under claims/ becomes its
+# own Argo CD Application via a git **files** generator, so a new claim is
+# onboarded by adding a file (not by editing this manifest).
+#
+# This is the API half of the tier-3 dual-pipeline:
+#   1. claim-sync (this file)        — reconciles XDatabase claims
+#   2. business-apps                 — reconciles the consuming Helm chart
+#
+# The claim Application has sync-wave -2 so claims land before the chart
+# Application (sync-wave 0) tries to read the connection Secret. Kargo
+# promotes claim *version* changes (e.g. `engine: postgres → postgres-15
+# upgrade`) through the kargo-claims Project's Stages (claims-dev →
+# claims-staging → claims-prod) on a separate cadence from the chart's
+# Kargo Project.
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: claim-sync
+  namespace: argocd
+spec:
+  goTemplate: true
+  goTemplateOptions: ["missingkey=error"]
+  generators:
+    - git:
+        repoURL: https://github.com/<repo>
+        revision: HEAD
+        files:
+          - path: '3-crossplane+helm/claims/*.yaml'
+  template:
+    metadata:
+      # The generator parses the YAML file and exposes its top-level fields.
+      # Each XDatabase has metadata.name (e.g. guestbook-dev). Use that as
+      # the Application name suffix.
+      name: 'claim-{{ .metadata.name }}'
+      annotations:
+        argocd.argoproj.io/sync-wave: "-2"
+        # Authorize the kargo-claims project to control freight for this
+        # Application — separate from kargo-simple which controls the
+        # chart Applications.
+        kargo.akuity.io/authorized-stage: 'kargo-claims:claims-{{ .spec.tier }}'
+        notifications.argoproj.io/subscribe.on-sync-failed.slack: <slack-channel>
+        notifications.argoproj.io/subscribe.on-health-degraded.slack: <slack-channel>
+    spec:
+      project: platform
+      source:
+        repoURL: https://github.com/<repo>
+        targetRevision: HEAD
+        path: '3-crossplane+helm/claims'
+        directory:
+          # Each Application syncs only its own claim file.
+          include: '{{ .metadata.name }}.yaml'
+      destination:
+        name: in-cluster
+        namespace: default
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
+        retry:
+          limit: 5
+          backoff:
+            duration: 30s
+            factor: 2
+            maxDuration: 5m
+        syncOptions:
+          - ServerSideApply=true

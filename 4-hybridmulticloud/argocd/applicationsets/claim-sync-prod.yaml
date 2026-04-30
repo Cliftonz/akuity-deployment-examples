@@ -1,0 +1,56 @@
+# Tier-4 API CD pipeline (prod). The single guestbook-prod claim fans
+# across every regional seed cluster registered with `env=prod, role=seed`.
+# Each region's local Crossplane reads its EnvironmentConfig (which carries
+# `provider: aws|gcp|onprem`) and routes the same claim to the appropriate
+# Composition.
+#
+# This is the most distinctive tier-4 pattern: ONE claim, MULTIPLE clusters,
+# DIFFERENT cloud providers behind it. The app team writes one file; the
+# platform team makes it work across the fleet.
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: claim-sync-prod
+  namespace: argocd
+spec:
+  goTemplate: true
+  goTemplateOptions: ["missingkey=error"]
+  generators:
+    - clusters:
+        selector:
+          matchLabels:
+            env: prod
+            role: seed         # only regional seed clusters run Crossplane
+  template:
+    metadata:
+      name: 'claim-guestbook-prod-{{ .metadata.labels.region }}'
+      annotations:
+        argocd.argoproj.io/sync-wave: "-2"
+        kargo.akuity.io/authorized-stage: 'kargo-claims:claims-prod-{{ .metadata.labels.region }}'
+        notifications.argoproj.io/subscribe.on-sync-failed.slack: <slack-channel>
+        notifications.argoproj.io/subscribe.on-health-degraded.slack: <slack-channel>
+    spec:
+      project: platform
+      source:
+        repoURL: https://github.com/<repo>
+        targetRevision: HEAD
+        path: '4-hybridmulticloud/claims'
+        directory:
+          # Sync every *-prod claim across the regional fleet — guestbook,
+          # orders, anything new the teams add.
+          include: '*-prod.yaml'
+      destination:
+        server: '{{ .server }}'
+        namespace: default
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
+        retry:
+          limit: 5
+          backoff:
+            duration: 30s
+            factor: 2
+            maxDuration: 5m
+        syncOptions:
+          - ServerSideApply=true

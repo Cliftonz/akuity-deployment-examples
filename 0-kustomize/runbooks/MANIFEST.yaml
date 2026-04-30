@@ -1,0 +1,33 @@
+# Tier-0 runbook manifest. Three event-triggered playbooks covering the
+# three failure modes that account for ~80% of tier-0 deploys going wrong.
+slackChannel: "#deploys"
+runbooks:
+  - file: argocd/app-sync-failure.md
+    title: Argo CD Application sync failed
+    trigger:
+      resource: argoproj.io/Application
+      state: SyncFailed
+      durationSeconds: 60
+    severity: sev2
+    owner: founder
+    autoclose:
+      condition: status.sync.status == 'Synced'
+      stableForSeconds: 300
+
+  - file: pod-issues/image-pull-failure.md
+    title: Pod stuck in ImagePullBackOff
+    trigger:
+      resource: v1/Pod
+      state: ImagePullBackOff
+      durationSeconds: 120
+    severity: sev2
+    owner: founder
+
+  - file: pod-issues/pod-health-issues.md
+    title: Pod CrashLoopBackOff
+    trigger:
+      resource: v1/Pod
+      state: CrashLoopBackOff
+      durationSeconds: 180
+    severity: sev2
+    owner: founder

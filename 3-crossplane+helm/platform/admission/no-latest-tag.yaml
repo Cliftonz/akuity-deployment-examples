@@ -1,0 +1,36 @@
+# Same "no :latest" rule as policy/security.rego, but enforced at admission
+# time. CI catches it on PR; this catches anything that lands by hand.
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingAdmissionPolicy
+metadata:
+  name: deny-latest-image-tag
+spec:
+  failurePolicy: Fail
+  matchConstraints:
+    resourceRules:
+      - apiGroups: ["apps"]
+        apiVersions: ["v1"]
+        operations: ["CREATE", "UPDATE"]
+        resources: ["deployments", "statefulsets", "daemonsets"]
+  validations:
+    - expression: |
+        !object.spec.template.spec.containers.exists(c, c.image.endsWith(':latest') || !c.image.contains(':'))
+      message: "Container images must be tagged (no :latest, no untagged) — Kargo promotion supplies the digest"
+      reason: Invalid
+---
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingAdmissionPolicyBinding
+metadata:
+  name: deny-latest-image-tag
+spec:
+  policyName: deny-latest-image-tag
+  validationActions: [Deny, Audit]   # tier 3+: Enforce — block violations + audit
+  matchResources:
+    namespaceSelector:
+      matchExpressions:
+        - key: kubernetes.io/metadata.name
+          operator: NotIn
+          # The platform namespaces install Helm charts that may legitimately
+          # use untagged images mid-rollout. PSA + the platform AppProject
+          # already constrain them, so we don't double-up here.
+          values: [kube-system, ingress-nginx, cert-manager, argocd, kargo, kargo-simple]

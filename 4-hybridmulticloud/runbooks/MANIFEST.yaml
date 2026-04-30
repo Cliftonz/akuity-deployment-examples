@@ -1,0 +1,105 @@
+# Tier-4 runbook manifest. Inherits tier 3 and adds two region-aware
+# playbooks: cross-region CNI/networking failures (rare but high-blast-
+# radius) and the regional rollout rollback playbook for when one
+# regional prod gate goes red mid-promotion.
+slackChannel: "#deploys"
+runbooks:
+  - file: argocd/app-sync-failure.md
+    title: Argo CD Application sync failed
+    trigger:
+      resource: argoproj.io/Application
+      state: SyncFailed
+      durationSeconds: 60
+    severity: sev2
+    owner: platform-team
+    autoclose:
+      condition: status.sync.status == 'Synced'
+      stableForSeconds: 300
+
+  - file: argocd/app-degraded.md
+    title: Argo CD Application Health = Degraded
+    trigger:
+      resource: argoproj.io/Application
+      state: Degraded
+      durationSeconds: 120
+    severity: sev2
+    owner: platform-team
+    autoclose:
+      condition: status.health.status == 'Healthy'
+      stableForSeconds: 300
+
+  - file: argocd/app-out-of-sync.md
+    title: Argo CD Application stuck OutOfSync (autoSync disabled)
+    trigger:
+      resource: argoproj.io/Application
+      state: OutOfSync
+      durationSeconds: 600
+    severity: sev3
+    owner: platform-team
+
+  - file: pod-issues/image-pull-failure.md
+    title: Pod stuck in ImagePullBackOff
+    trigger:
+      resource: v1/Pod
+      state: ImagePullBackOff
+      durationSeconds: 120
+    severity: sev2
+    owner: platform-team
+
+  - file: pod-issues/pod-health-issues.md
+    title: Pod CrashLoopBackOff
+    trigger:
+      resource: v1/Pod
+      state: CrashLoopBackOff
+      durationSeconds: 180
+    severity: sev2
+    owner: platform-team
+
+  - file: security/rbac-denials.md
+    title: RBAC access denied (audit log)
+    trigger:
+      resource: audit.k8s.io/Event
+      state: Forbidden
+      durationSeconds: 0
+    severity: sev3
+    owner: security-team
+
+  - file: infra/pvc-binding-failure.md
+    title: PersistentVolumeClaim stuck Pending
+    trigger:
+      resource: v1/PersistentVolumeClaim
+      state: Pending
+      durationSeconds: 300
+    severity: sev2
+    owner: platform-team
+
+  - file: platform/crossplane-claim-stuck-pending.md
+    title: Crossplane XDatabase claim stuck Pending / Synced=False
+    trigger:
+      resource: infra.k8/XDatabase
+      state: Pending
+      durationSeconds: 300
+    severity: sev1
+    owner: platform-team
+    autoclose:
+      condition: status.conditions[?(@.type=='Ready')].status == 'True'
+      stableForSeconds: 300
+
+  - file: networking/cni-networking.md
+    title: CNI / pod-network failure (regional)
+    trigger:
+      resource: v1/Node
+      state: NetworkUnavailable
+      durationSeconds: 60
+    severity: sev1
+    owner: platform-team
+
+  - file: kargo/regional-rollout-rollback.md
+    title: One regional prod stage went red mid-promotion
+    trigger:
+      resource: kargo.akuity.io/Stage
+      state: Failed
+      reasonContains: "prod-"
+      durationSeconds: 60
+    severity: sev1
+    owner: platform-team

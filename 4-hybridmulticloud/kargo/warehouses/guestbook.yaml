@@ -1,0 +1,14 @@
+apiVersion: kargo.akuity.io/v1alpha1
+kind: Warehouse
+metadata:
+  name: guestbook
+  namespace: kargo-simple
+spec:
+  subscriptions:
+    - image:
+        repoURL: ghcr.io/<user>/guestbook
+        # semverConstraint keeps mutable tags (latest, canary, main) out of
+        # the discovery set. Combined with digest-pinning in the Stage
+        # promotion steps, that gives the warehouse a stable input space.
+        semverConstraint: ">=0.0.1"
+        discoveryLimit: 20

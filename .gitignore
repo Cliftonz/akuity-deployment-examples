@@ -1,0 +1,47 @@
+# CUE
+*.cue.wip
+framework/cue.mod/pkg/
+framework/cue.mod/usr/
+
+# Rendered output is CI-generated but tracked in git for Harness GitOps
+# reconciliation. Do NOT gitignore apps/ or platform/crossplane/ — they
+# are the GitOps reconciliation targets.
+
+# Function build artifacts
+*.xpkg
+framework/functions/*/crossplane
+framework/functions/*/manifest.json
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Environment
+.env
+.env.*
+
+# Secrets (never commit)
+*.pem
+*.key
+*-secret.yaml
+*-secrets.yaml
+
+# transient render scratch
+.cue-render/
+
+# Terraform local state and plugin cache (tier 2 wild-west module)
+**/.terraform/
+**/.terraform.lock.hcl
+**/terraform.tfstate
+**/terraform.tfstate.backup
+
+# Helm chart packaging artifacts
+**/charts/**/Chart.lock
+**/charts/**/charts/

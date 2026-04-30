@@ -1,0 +1,31 @@
+# Tier-4 AnalysisTemplate. Per-region latency check via Thanos. Each
+# regional prod Stage's verification gates on its OWN region's latency,
+# not a fleet aggregate — a slow region shouldn't be hidden by fast ones.
+apiVersion: argoproj.io/v1alpha1
+kind: AnalysisTemplate
+metadata:
+  name: regional-latency
+  namespace: kargo-simple
+spec:
+  args:
+    - name: region
+    - name: service-name
+    - name: service-namespace
+  metrics:
+    - name: p99-latency
+      successCondition: result[0] < 0.5   # 500ms p99 budget
+      failureLimit: 1
+      provider:
+        prometheus:
+          # Thanos query endpoint — federates across all regional Prometheus
+          # instances. The `region` label is added at scrape time by each
+          # cluster's Prometheus ExternalLabels.
+          address: http://thanos-query.monitoring.svc.cluster.local:10902
+          query: |
+            histogram_quantile(0.99,
+              sum(rate(http_request_duration_seconds_bucket{
+                region="{{args.region}}",
+                namespace="{{args.service-namespace}}",
+                service="{{args.service-name}}"
+              }[5m])) by (le)
+            )

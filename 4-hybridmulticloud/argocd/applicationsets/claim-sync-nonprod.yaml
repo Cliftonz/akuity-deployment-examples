@@ -1,0 +1,51 @@
+# Tier-4 API CD pipeline (non-prod). Same git-files generator as tier 3 —
+# each claim file becomes its own Argo CD Application. Dev and staging each
+# land on a single cluster (no regional fan-out at non-prod).
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: claim-sync-nonprod
+  namespace: argocd
+spec:
+  goTemplate: true
+  goTemplateOptions: ["missingkey=error"]
+  generators:
+    - git:
+        repoURL: https://github.com/<repo>
+        revision: HEAD
+        # Wildcards cover every app's non-prod claims. New apps onboard by
+        # adding a claim file — no AppSet edit required.
+        files:
+          - path: '4-hybridmulticloud/claims/*-dev.yaml'
+          - path: '4-hybridmulticloud/claims/*-staging.yaml'
+  template:
+    metadata:
+      name: 'claim-{{ .metadata.name }}'
+      annotations:
+        argocd.argoproj.io/sync-wave: "-2"
+        kargo.akuity.io/authorized-stage: 'kargo-claims:claims-{{ .spec.tier }}'
+        notifications.argoproj.io/subscribe.on-sync-failed.slack: <slack-channel>
+        notifications.argoproj.io/subscribe.on-health-degraded.slack: <slack-channel>
+    spec:
+      project: platform
+      source:
+        repoURL: https://github.com/<repo>
+        targetRevision: HEAD
+        path: '4-hybridmulticloud/claims'
+        directory:
+          include: '{{ .metadata.name }}.yaml'
+      destination:
+        name: in-cluster
+        namespace: default
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
+        retry:
+          limit: 5
+          backoff:
+            duration: 30s
+            factor: 2
+            maxDuration: 5m
+        syncOptions:
+          - ServerSideApply=true

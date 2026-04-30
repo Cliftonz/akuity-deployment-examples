@@ -1,0 +1,62 @@
+# Onboard a new app by adding a directory or list element. Tier 1 uses a
+# list generator because the chart + per-env values lives at predictable
+# paths (charts/guestbook/, env/values-<env>.yaml). The generator's only
+# job is enumerating environments.
+#
+# The Application source still points at the env branch (where Kargo writes
+# rendered output), and Argo CD applies plain Kubernetes manifests — never
+# re-renders the chart. This is the rendered-manifests pattern; the bytes
+# that ran in dev are the bytes that run in prod.
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: business-apps
+  namespace: argocd
+spec:
+  goTemplate: true
+  goTemplateOptions: ["missingkey=error"]
+  generators:
+    - list:
+        elements:
+          - app: guestbook
+            env: dev
+          - app: guestbook
+            env: staging
+          - app: guestbook
+            env: prod
+  template:
+    metadata:
+      name: '{{ .app }}-{{ .env }}'
+      annotations:
+        kargo.akuity.io/authorized-stage: 'kargo-simple:{{ .env }}'
+        notifications.argoproj.io/subscribe.on-sync-failed.slack: <slack-channel>
+        notifications.argoproj.io/subscribe.on-health-degraded.slack: <slack-channel>
+        notifications.argoproj.io/subscribe.on-sync-status-unknown.slack: <slack-channel>
+    spec:
+      project: business
+      source:
+        repoURL: https://github.com/<repo>
+        # Argo CD reads the env branch (where Kargo writes rendered output)
+        # and never re-renders the chart. include: manifests.yaml keeps junk
+        # files (.gitkeep, half-written artifacts) from breaking the app.
+        targetRevision: 'env/{{ .env }}'
+        path: 'rendered/{{ .env }}'
+        directory:
+          recurse: false
+          include: 'manifests.yaml'
+      destination:
+        name: in-cluster
+        namespace: '{{ .app }}-{{ .env }}'
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
+        retry:
+          limit: 5
+          backoff:
+            duration: 30s
+            factor: 2
+            maxDuration: 5m
+        syncOptions:
+          - CreateNamespace=true
+          - ServerSideApply=true

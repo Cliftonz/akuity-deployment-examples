@@ -1,0 +1,37 @@
+# Argo CD reconciles its own configuration. argocd-cm holds the Dex/OIDC
+# connectors; argocd-notifications-cm holds notification triggers and
+# templates. Sync wave -10 so this lands before any other Application
+# (Notifications subscriptions on other Apps fail silently if the
+# notifications ConfigMap doesn't exist yet).
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: argocd-config
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "-10"
+    notifications.argoproj.io/subscribe.on-sync-failed.slack: <slack-channel>
+    notifications.argoproj.io/subscribe.on-health-degraded.slack: <slack-channel>
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: platform
+  source:
+    repoURL: https://github.com/<repo>
+    targetRevision: HEAD
+    path: 2-terraform+helm/argocd/configmaps
+  destination:
+    name: in-cluster
+    namespace: argocd
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    retry:
+      limit: 5
+      backoff:
+        duration: 30s
+        factor: 2
+        maxDuration: 5m
+    syncOptions:
+      - ServerSideApply=true

@@ -1,0 +1,49 @@
+# Loki — log aggregation. Tier 2 introduces it because the wild-west drift
+# narrative needs a place to *see* the drift; "secret not found" log lines
+# are the diagnostic surface. Tier 3 inherits unchanged; tier 4 expands to
+# a distributed deployment with per-region object storage.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: loki
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "-1"
+    notifications.argoproj.io/subscribe.on-sync-failed.slack: <slack-channel>
+    notifications.argoproj.io/subscribe.on-health-degraded.slack: <slack-channel>
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: platform
+  sources:
+    - repoURL: https://grafana.github.io/helm-charts
+      chart: loki
+      targetRevision: 6.16.0
+      helm:
+        releaseName: loki
+        valueFiles:
+          - $values/4-hybridmulticloud/platform/loki/values.yaml
+    - repoURL: https://github.com/<repo>
+      targetRevision: HEAD
+      ref: values
+    - repoURL: https://github.com/<repo>
+      targetRevision: HEAD
+      path: 4-hybridmulticloud/platform/loki
+      directory:
+        include: 'namespace.yaml'
+  destination:
+    name: in-cluster
+    namespace: logging
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    retry:
+      limit: 5
+      backoff:
+        duration: 30s
+        factor: 2
+        maxDuration: 5m
+    syncOptions:
+      - ServerSideApply=true
+      - CreateNamespace=true

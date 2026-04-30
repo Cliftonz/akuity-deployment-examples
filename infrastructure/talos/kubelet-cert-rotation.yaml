@@ -1,0 +1,20 @@
+# Talos machine-config patch — enables kubelet server-side certificate
+# rotation. Required for metrics-server to validate kubelet TLS certs
+# without --kubelet-insecure-tls. Paired with kubelet-serving-cert-approver
+# (see infrastructure/metrics-server/install.sh).
+#
+# Apply via Omni:
+#   Cluster → Config Patches → Add new patch → paste this file → Save
+#   Then rolling-reboot nodes one at a time:
+#     talosctl -n <cp-ip> reboot
+#
+# Apply via talosctl (requires direct Talos API access):
+#   talosctl -n <node-ip> patch machineconfig --patch @infrastructure/talos/kubelet-cert-rotation.yaml
+#   talosctl -n <node-ip> reboot
+#
+# Reference:
+#   https://docs.siderolabs.com/kubernetes-guides/monitoring-and-observability/deploy-metrics-server
+machine:
+  kubelet:
+    extraArgs:
+      rotate-server-certificates: "true"

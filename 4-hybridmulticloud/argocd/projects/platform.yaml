@@ -1,0 +1,96 @@
+# Platform team's project. Component workloads live here — ingress,
+# cert-manager, the Kargo control plane. These don't change often, but when
+# they do, the blast radius is the whole cluster, so the rules are tight.
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: platform
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  description: Cluster-wide component workloads (ingress, cert-manager, etc.)
+  sourceRepos:
+    - https://github.com/<repo>
+    - https://kubernetes.github.io/ingress-nginx
+    - https://charts.jetstack.io
+  destinations:
+    - namespace: ingress-nginx
+      server: "*"
+    - namespace: cert-manager
+      server: "*"
+    - namespace: kube-system
+      server: "*"
+    - namespace: kargo
+      server: "*"
+    - namespace: kargo-simple
+      server: "*"
+    - namespace: argocd
+      server: "*"
+  # Used to be `*/*`. That meant any merged PR could ship a privileged
+  # ClusterRoleBinding or a sneaky admission webhook through this project.
+  # The list below is the actual set ingress-nginx + cert-manager + Kargo
+  # need — nothing more. Anything new gets added explicitly.
+  clusterResourceWhitelist:
+    - group: ""
+      kind: Namespace
+    - group: rbac.authorization.k8s.io
+      kind: ClusterRole
+    - group: rbac.authorization.k8s.io
+      kind: ClusterRoleBinding
+    - group: apiextensions.k8s.io
+      kind: CustomResourceDefinition
+    - group: admissionregistration.k8s.io
+      kind: ValidatingWebhookConfiguration
+    - group: admissionregistration.k8s.io
+      kind: MutatingWebhookConfiguration
+    - group: admissionregistration.k8s.io
+      kind: ValidatingAdmissionPolicy
+    - group: admissionregistration.k8s.io
+      kind: ValidatingAdmissionPolicyBinding
+    - group: cert-manager.io
+      kind: ClusterIssuer
+    - group: kargo.akuity.io
+      kind: Project
+    - group: scheduling.k8s.io
+      kind: PriorityClass
+  # Same idea for namespaced resources — enumerate the groups, don't blanket.
+  namespaceResourceWhitelist:
+    - group: ""
+      kind: "*"
+    - group: apps
+      kind: "*"
+    - group: batch
+      kind: "*"
+    - group: networking.k8s.io
+      kind: "*"
+    - group: policy
+      kind: "*"
+    - group: autoscaling
+      kind: "*"
+    - group: rbac.authorization.k8s.io
+      kind: "*"
+    - group: cert-manager.io
+      kind: "*"
+    - group: monitoring.coreos.com
+      kind: "*"
+    - group: kargo.akuity.io
+      kind: "*"
+  syncWindows:
+    - kind: deny
+      # Friday 22:00 ET through Monday 10:00 ET. We pin the timezone because
+      # UTC schedules drift twice a year with DST and put the freeze in the
+      # wrong place. `manualSync: true` is intentional — on-call has to be
+      # able to break the freeze when something's actually on fire.
+      schedule: "0 22 * * 5"
+      duration: 60h
+      timeZone: America/New_York
+      manualSync: true
+      applications: ["*"]
+  roles:
+    - name: platform-admin
+      description: Platform engineering team
+      policies:
+        - p, proj:platform:platform-admin, applications, *, platform/*, allow
+      groups:
+        - platform-engineering

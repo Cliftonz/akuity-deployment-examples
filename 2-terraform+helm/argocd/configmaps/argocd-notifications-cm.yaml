@@ -1,0 +1,95 @@
+# Argo CD Notifications config. Triggers + templates referenced by every
+# Application's `notifications.argoproj.io/subscribe.<trigger>.<service>`
+# annotation. Without this ConfigMap those subscriptions are dead — the
+# annotation says "page on sync-failed" and nothing fires.
+#
+# The Slack token is supplied via an ExternalSecret pulling from the
+# corporate secret store. See platform/external-secrets/install.yaml for
+# the ESO install; the SecretStore + ExternalSecret for this ConfigMap are
+# at platform/external-secrets/argocd-notifications-secret.yaml.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: argocd-notifications-cm
+  namespace: argocd
+  labels:
+    app.kubernetes.io/name: argocd-notifications-cm
+    app.kubernetes.io/part-of: argocd
+data:
+  # Service definition: which channel/sink notifications are routed to.
+  # The token comes from a Secret named argocd-notifications-secret; that
+  # Secret is provisioned by ESO from the corporate secret store.
+  service.slack: |
+    token: $slack-token
+
+  # Triggers: when a notification fires.
+  trigger.on-sync-failed: |
+    - description: Application sync failed
+      send:
+        - app-sync-failed
+      when: app.status.operationState.phase in ['Error', 'Failed']
+
+  trigger.on-health-degraded: |
+    - description: Application health is degraded
+      send:
+        - app-health-degraded
+      when: app.status.health.status == 'Degraded'
+
+  # Custom trigger — Argo CD's default name is on-sync-status-unknown but
+  # the upstream defaults don't ship a definition for it. Define it here
+  # so the subscription annotations across tiers stop being dead links.
+  trigger.on-sync-status-unknown: |
+    - description: Application sync status is unknown
+      send:
+        - app-sync-status-unknown
+      when: app.status.sync.status == 'Unknown'
+
+  # Templates: how the message is formatted per service.
+  template.app-sync-failed: |
+    message: |
+      :x: Application *{{.app.metadata.name}}* sync failed.
+      Repo: {{.app.spec.source.repoURL}}
+      Revision: {{.app.status.sync.revision}}
+      {{range $i, $r := .app.status.operationState.syncResult.resources}}
+      - {{$r.kind}}/{{$r.name}}: {{$r.message}}
+      {{end}}
+    slack:
+      attachments: |
+        [{
+          "title": "{{ .app.metadata.name}}",
+          "title_link": "{{.context.argocdUrl}}/applications/{{.app.metadata.name}}",
+          "color": "#E96D76",
+          "fields": [
+            { "title": "Sync Status", "value": "{{.app.status.sync.status}}", "short": true },
+            { "title": "Repository", "value": "{{.app.spec.source.repoURL}}", "short": true }
+          ]
+        }]
+
+  template.app-health-degraded: |
+    message: |
+      :warning: Application *{{.app.metadata.name}}* health is degraded.
+      Status: {{.app.status.health.status}}
+      Message: {{.app.status.health.message}}
+    slack:
+      attachments: |
+        [{
+          "title": "{{ .app.metadata.name}}",
+          "title_link": "{{.context.argocdUrl}}/applications/{{.app.metadata.name}}",
+          "color": "#f4c430",
+          "fields": [
+            { "title": "Health Status", "value": "{{.app.status.health.status}}", "short": true }
+          ]
+        }]
+
+  template.app-sync-status-unknown: |
+    message: |
+      :grey_question: Application *{{.app.metadata.name}}* sync status is Unknown.
+      Argo CD cannot determine the cluster state vs git state.
+      Most common cause: cluster connection lost or namespace missing.
+    slack:
+      attachments: |
+        [{
+          "title": "{{ .app.metadata.name}}",
+          "title_link": "{{.context.argocdUrl}}/applications/{{.app.metadata.name}}",
+          "color": "#808080"
+        }]

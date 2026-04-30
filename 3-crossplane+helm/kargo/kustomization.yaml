@@ -1,0 +1,30 @@
+# All Kargo CRs in one bundle. Two pipelines live here:
+#
+# 1. kargo-claims (API pipeline) — promotes XDatabase claim YAML +
+#    rendered XRD/Composition output. Slow cadence; manual at every stage.
+# 2. kargo-simple (app pipeline) — promotes the Helm chart bytes. Faster
+#    cadence; auto-promotes to dev, manual to staging/prod.
+#
+# The two pipelines are independent: a chart-only release does not touch
+# claim freight, and an XRD migration does not block a chart deploy.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  # Claims pipeline (API)
+  - projects/kargo-claims.yaml
+  - projects/project-config-claims.yaml
+  - warehouses/claims.yaml
+  - stages/claims-dev.yaml
+  - stages/claims-staging.yaml
+  - stages/claims-prod.yaml
+  # App pipeline (chart)
+  - projects/kargo-simple.yaml
+  - projects/project-config.yaml
+  - warehouses/guestbook.yaml
+  - analysis-templates/guestbook-http-probe.yaml
+  - analysis-templates/error-rate-prometheus.yaml
+  - analysis-templates/db-claim-ready.yaml
+  - stages/dev.yaml
+  - stages/staging.yaml
+  - stages/prod.yaml

@@ -1,0 +1,29 @@
+# Tier-3 AnalysisTemplate. The chart promotion now depends on the
+# corresponding XDatabase claim being Ready before the chart is allowed
+# to roll forward. Without this, a chart that envFrom's a still-pending
+# Secret CrashLoops at staging while Kargo cheerfully promotes it to prod.
+apiVersion: argoproj.io/v1alpha1
+kind: AnalysisTemplate
+metadata:
+  name: db-claim-ready
+  namespace: kargo-simple
+spec:
+  args:
+    - name: claim-name
+  metrics:
+    - name: claim-ready
+      successCondition: result == "True"
+      failureLimit: 1
+      provider:
+        web:
+          method: GET
+          # Kubernetes API; service-account token mounted at the standard
+          # path. The runner has read on infra.k8 resources via a Role
+          # bound to the kargo-controller ServiceAccount.
+          url: https://kubernetes.default.svc/apis/infra.k8/v1alpha1/xdatabases/{{args.claim-name}}
+          headers:
+            - key: Authorization
+              value: Bearer $(cat /var/run/secrets/kubernetes.io/serviceaccount/token)
+            - key: Accept
+              value: application/json
+          jsonPath: "{$.status.conditions[?(@.type=='Ready')].status}"
