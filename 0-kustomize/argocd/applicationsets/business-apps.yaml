@@ -1,11 +1,14 @@
-# Onboard a new app by adding a list element. The Application source still
-# points at the env branch (where Kargo writes rendered output), and Argo CD
-# applies plain Kubernetes manifests — never re-runs `kustomize build`. This
-# is the rendered-manifests pattern; the bytes that ran in dev are the bytes
-# that run in prod.
+# Onboard a new app by adding a list element.
 #
-# Single-cluster setup, so no cluster generator. The multi-cluster evolution
-# lives in tier 4 with a cluster generator.
+# Demo simplification: Argo CD points at the per-env kustomize overlay on
+# `main` and runs `kustomize build` at sync time. The full rendered-
+# manifests pattern (env branches with hydrated YAML, no Argo-side
+# rendering) is the production-shape design — see docs/rendered-manifests-
+# pattern.md for the long-form rationale and how Kargo would write to
+# env/<stage> branches when wired. Tiers 1+ keep that pattern.
+#
+# Single-cluster setup, so no cluster generator. The multi-cluster
+# evolution lives in tier 4 with a cluster generator.
 apiVersion: argoproj.io/v1alpha1
 kind: ApplicationSet
 metadata:
@@ -32,11 +35,8 @@ spec:
       project: business
       source:
         repoURL: https://github.com/Cliftonz/akuity-deployment-examples
-        targetRevision: 'env/{{ .env }}'
-        path: 'rendered/{{ .env }}'
-        directory:
-          recurse: false
-          include: 'manifests.yaml'
+        targetRevision: main
+        path: '0-kustomize/apps/{{ .app }}/envs/{{ .env }}'
       destination:
         name: in-cluster
         namespace: '{{ .app }}-{{ .env }}'
