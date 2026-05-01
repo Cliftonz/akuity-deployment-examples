@@ -26,10 +26,10 @@ spec:
         releaseName: kps
         valueFiles:
           - $values/4-hybridmulticloud/platform/kube-prometheus-stack/values.yaml
-    - repoURL: https://github.com/<repo>
+    - repoURL: https://github.com/Cliftonz/akuity-deployment-examples
       targetRevision: HEAD
       ref: values
-    - repoURL: https://github.com/<repo>
+    - repoURL: https://github.com/Cliftonz/akuity-deployment-examples
       targetRevision: HEAD
       path: 4-hybridmulticloud/platform/kube-prometheus-stack
       directory:

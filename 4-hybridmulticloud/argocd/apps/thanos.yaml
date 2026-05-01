@@ -27,10 +27,10 @@ spec:
         releaseName: thanos
         valueFiles:
           - $values/4-hybridmulticloud/platform/thanos/values.yaml
-    - repoURL: https://github.com/<repo>
+    - repoURL: https://github.com/Cliftonz/akuity-deployment-examples
       targetRevision: HEAD
       ref: values
-    - repoURL: https://github.com/<repo>
+    - repoURL: https://github.com/Cliftonz/akuity-deployment-examples
       targetRevision: HEAD
       path: 4-hybridmulticloud/platform/thanos
       directory:

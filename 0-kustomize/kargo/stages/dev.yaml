@@ -25,9 +25,9 @@ spec:
     spec:
       vars:
         - name: gitRepo
-          value: https://github.com/<repo>
+          value: https://github.com/Cliftonz/akuity-deployment-examples
         - name: imageRepo
-          value: ghcr.io/<user>/guestbook
+          value: gcr.io/google-samples/hello-app
         - name: env
           value: dev
       # Step ordering matters: kustomize-build runs first, into a temp path.

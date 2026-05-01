@@ -21,7 +21,7 @@ spec:
     spec:
       vars:
         - name: gitRepo
-          value: https://github.com/<repo>
+          value: https://github.com/Cliftonz/akuity-deployment-examples
         - name: env
           value: staging
       steps:
@@ -52,7 +52,7 @@ spec:
             path: ./out
             message: |
               chore(claims): promote ${{ vars.env }} claim + XRD/Compositions
-              ${{ commitFrom("https://github.com/<repo>", "main").ID }}
+              ${{ commitFrom("https://github.com/Cliftonz/akuity-deployment-examples", "main").ID }}
         - uses: git-push
           config:
             path: ./out

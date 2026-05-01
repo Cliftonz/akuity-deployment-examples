@@ -35,7 +35,7 @@ spec:
     spec:
       project: business
       source:
-        repoURL: https://github.com/<repo>
+        repoURL: https://github.com/Cliftonz/akuity-deployment-examples
         # Argo CD reads the env branch (where Kargo writes rendered output)
         # and never re-renders the chart. include: manifests.yaml keeps junk
         # files (.gitkeep, half-written artifacts) from breaking the app.

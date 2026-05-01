@@ -5,7 +5,7 @@
 namespace: guestbook
 
 image:
-  repository: ghcr.io/<user>/guestbook
+  repository: gcr.io/google-samples/hello-app
   tag: "0.0.1"
   # Kargo replaces this with a digest at promotion time. When set,
   # takes precedence over .tag. Leave empty in defaults.

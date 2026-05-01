@@ -32,7 +32,7 @@ spec:
     spec:
       project: platform
       source:
-        repoURL: https://github.com/<repo>
+        repoURL: https://github.com/Cliftonz/akuity-deployment-examples
         targetRevision: HEAD
         path: '4-hybridmulticloud/claims'
         directory:

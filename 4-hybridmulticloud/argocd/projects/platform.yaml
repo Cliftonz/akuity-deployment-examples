@@ -11,7 +11,7 @@ metadata:
 spec:
   description: Cluster-wide component workloads (ingress, cert-manager, etc.)
   sourceRepos:
-    - https://github.com/<repo>
+    - https://github.com/Cliftonz/akuity-deployment-examples
     - https://kubernetes.github.io/ingress-nginx
     - https://charts.jetstack.io
   destinations:

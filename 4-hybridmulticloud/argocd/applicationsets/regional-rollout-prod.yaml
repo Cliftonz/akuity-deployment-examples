@@ -35,7 +35,7 @@ spec:
     spec:
       project: business
       source:
-        repoURL: https://github.com/<repo>
+        repoURL: https://github.com/Cliftonz/akuity-deployment-examples
         # Each region pulls its own env branch where the per-region Kargo
         # Stage has hydrated rendered manifests.
         targetRevision: 'env/prod-{{ .metadata.labels.region }}'

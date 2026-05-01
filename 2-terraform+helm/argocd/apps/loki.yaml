@@ -23,10 +23,10 @@ spec:
         releaseName: loki
         valueFiles:
           - $values/2-terraform+helm/platform/loki/values.yaml
-    - repoURL: https://github.com/<repo>
+    - repoURL: https://github.com/Cliftonz/akuity-deployment-examples
       targetRevision: HEAD
       ref: values
-    - repoURL: https://github.com/<repo>
+    - repoURL: https://github.com/Cliftonz/akuity-deployment-examples
       targetRevision: HEAD
       path: 2-terraform+helm/platform/loki
       directory:

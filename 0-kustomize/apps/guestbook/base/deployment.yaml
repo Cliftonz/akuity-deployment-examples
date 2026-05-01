@@ -24,13 +24,16 @@ spec:
           # supplies the tag, and Kargo replaces it with a digest at promotion
           # time. Hardcoding `:latest` here was how a missed placeholder
           # rewrite used to ship a mutable tag to prod.
-          image: ghcr.io/<user>/guestbook
+          #
+          # Public demo image — gcr.io/google-samples/hello-app. Tags 1.0 and
+          # 2.0 exist; Kargo's Warehouse semverConstraint discovers both.
+          image: gcr.io/google-samples/hello-app
           ports:
             - name: http
-              containerPort: 3000
+              containerPort: 8080
           readinessProbe:
             httpGet:
-              path: /healthz
+              path: /
               port: http
             initialDelaySeconds: 5
             periodSeconds: 10
@@ -38,7 +41,7 @@ spec:
             failureThreshold: 3
           livenessProbe:
             httpGet:
-              path: /healthz
+              path: /
               port: http
             initialDelaySeconds: 30
             periodSeconds: 30

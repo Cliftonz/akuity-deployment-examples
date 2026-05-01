@@ -29,8 +29,8 @@ patches:
         value: 500m
 
 images:
-  - name: ghcr.io/<user>/guestbook
-    newTag: v0.0.1
+  - name: gcr.io/google-samples/hello-app
+    newTag: "1.0"
 
 labels:
   - pairs:

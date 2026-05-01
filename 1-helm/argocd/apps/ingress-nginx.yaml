@@ -17,7 +17,7 @@ metadata:
 spec:
   project: platform
   sources:
-    - repoURL: https://github.com/<repo>
+    - repoURL: https://github.com/Cliftonz/akuity-deployment-examples
       targetRevision: HEAD
       path: 1-helm/platform/ingress-nginx
       directory:
@@ -29,7 +29,7 @@ spec:
         releaseName: ingress-nginx
         valueFiles:
           - $values/platform/ingress-nginx/values.yaml
-    - repoURL: https://github.com/<repo>
+    - repoURL: https://github.com/Cliftonz/akuity-deployment-examples
       targetRevision: HEAD
       ref: values
   destination:

@@ -15,7 +15,7 @@ metadata:
 spec:
   subscriptions:
     - git:
-        repoURL: https://github.com/<repo>
+        repoURL: https://github.com/Cliftonz/akuity-deployment-examples
         branch: main
         includePaths:
           - "3-crossplane+helm/claims/**"

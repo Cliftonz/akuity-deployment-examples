@@ -15,7 +15,7 @@ metadata:
 spec:
   project: platform
   sources:
-    - repoURL: https://github.com/<repo>
+    - repoURL: https://github.com/Cliftonz/akuity-deployment-examples
       targetRevision: HEAD
       path: 1-helm/platform/cert-manager
       directory:
@@ -27,7 +27,7 @@ spec:
         releaseName: cert-manager
         valueFiles:
           - $values/platform/cert-manager/values.yaml
-    - repoURL: https://github.com/<repo>
+    - repoURL: https://github.com/Cliftonz/akuity-deployment-examples
       targetRevision: HEAD
       ref: values
   destination:
@@ -63,7 +63,7 @@ metadata:
 spec:
   project: platform
   source:
-    repoURL: https://github.com/<repo>
+    repoURL: https://github.com/Cliftonz/akuity-deployment-examples
     targetRevision: HEAD
     path: 1-helm/platform/cert-manager
     directory:

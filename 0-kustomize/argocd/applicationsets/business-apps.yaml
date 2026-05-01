@@ -31,7 +31,7 @@ spec:
     spec:
       project: business
       source:
-        repoURL: https://github.com/<repo>
+        repoURL: https://github.com/Cliftonz/akuity-deployment-examples
         targetRevision: 'env/{{ .env }}'
         path: 'rendered/{{ .env }}'
         directory:

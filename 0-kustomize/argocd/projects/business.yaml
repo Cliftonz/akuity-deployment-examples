@@ -11,7 +11,7 @@ metadata:
 spec:
   description: Product-team workloads. Namespace-scoped, self-serve.
   sourceRepos:
-    - https://github.com/<repo>
+    - https://github.com/Cliftonz/akuity-deployment-examples
   # Enumerated, not glob. The earlier `guestbook-*` was wide enough that a PR
   # adding `apps/guestbook-evil/envs/dev/` would slip through — the namespace
   # would still match. List them out, and a rogue directory has nowhere to land.

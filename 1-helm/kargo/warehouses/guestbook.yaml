@@ -6,9 +6,9 @@ metadata:
 spec:
   subscriptions:
     - image:
-        repoURL: ghcr.io/<user>/guestbook
-        # semverConstraint keeps mutable tags (latest, canary, main) out of
-        # the discovery set. Combined with digest-pinning in the Stage
-        # promotion steps, that gives the warehouse a stable input space.
-        semverConstraint: ">=0.0.1"
+        # Public demo image. Tags 1.0 and 2.0 exist; semverConstraint
+        # keeps any future mutable tags (latest, canary) out of the
+        # discovery set.
+        repoURL: gcr.io/google-samples/hello-app
+        semverConstraint: ">=1.0.0"
         discoveryLimit: 20

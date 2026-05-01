@@ -10,48 +10,57 @@ Tier 4 stacks three independent layers, top to bottom. Each owns a narrow concer
 
 ```mermaid
 flowchart TB
-    subgraph TLD["TLD control plane (top)"]
-        TLDGit[(Org git +<br/>policy repos)]
-        TLDArgo[Akuity-managed Argo CD<br/>(one instance, fleet-wide)]
-        TLDKargo[Akuity-managed Kargo<br/>(per-region gates)]
-        TLDIntel[Akuity Intelligence +<br/>fleet-wide Audit Logs]
+    subgraph TLD["TLD control plane"]
+        TLDGit[("Org git + policy repos")]
+        TLDArgo["Akuity-managed Argo CD<br/>one instance, fleet-wide"]
+        TLDKargo["Akuity-managed Kargo<br/>per-region gates"]
+        TLDIntel["Akuity Intelligence<br/>fleet-wide Audit Logs"]
     end
 
-    subgraph Regions["Per-region domain"]
+    subgraph Regions["Always-connected regions"]
         direction LR
-        subgraph USRegion["us-east region"]
-            SeedUS[Seed cluster<br/>Crossplane + ClusterAPI]
-            WorkerUS1[Worker cluster<br/>guestbook-prod]
-            WorkerUS2[Worker cluster<br/>orders-prod]
-            SeedUS -->|spins up + manages| WorkerUS1
-            SeedUS -->|spins up + manages| WorkerUS2
+        subgraph USRegion["us-east"]
+            SeedUS["Seed cluster<br/>Crossplane + Cluster API"]
+            WorkerUS1["Worker<br/>guestbook-prod"]
+            WorkerUS2["Worker<br/>orders-prod"]
+            SeedUS -->|provisions| WorkerUS1
+            SeedUS -->|provisions| WorkerUS2
         end
-        subgraph EURegion["eu-west region"]
-            SeedEU[Seed cluster<br/>Crossplane + ClusterAPI]
-            WorkerEU1[Worker cluster<br/>guestbook-prod]
-            WorkerEU2[Worker cluster<br/>orders-prod]
+        subgraph EURegion["eu-west"]
+            SeedEU["Seed cluster<br/>Crossplane + Cluster API"]
+            WorkerEU1["Worker<br/>guestbook-prod"]
+            WorkerEU2["Worker<br/>orders-prod"]
             SeedEU --> WorkerEU1
             SeedEU --> WorkerEU2
         end
-        subgraph APRegion["ap-southeast region"]
-            SeedAP[Seed cluster<br/>Crossplane + ClusterAPI]
-            WorkerAP1[Worker cluster<br/>guestbook-prod]
-            WorkerAP2[Worker cluster<br/>orders-prod]
+        subgraph APRegion["ap-southeast"]
+            SeedAP["Seed cluster<br/>Crossplane + Cluster API"]
+            WorkerAP1["Worker<br/>guestbook-prod"]
+            WorkerAP2["Worker<br/>orders-prod"]
             SeedAP --> WorkerAP1
             SeedAP --> WorkerAP2
         end
     end
 
+    subgraph Edge["Intermittently-connected edge"]
+        direction LR
+        SeedShip["Onboard seed<br/>cruise ship / rig / remote site"]
+        WorkerShip["Worker<br/>ship workloads"]
+        SeedShip -->|provisions| WorkerShip
+    end
+
     TLDGit -.->|watched by| TLDArgo
-    TLDArgo -->|reconciles via agent| WorkerUS1
-    TLDArgo -->|reconciles via agent| WorkerUS2
-    TLDArgo -->|reconciles via agent| WorkerEU1
-    TLDArgo -->|reconciles via agent| WorkerEU2
-    TLDArgo -->|reconciles via agent| WorkerAP1
-    TLDArgo -->|reconciles via agent| WorkerAP2
+    TLDArgo -->|agent| WorkerUS1
+    TLDArgo -->|agent| WorkerUS2
+    TLDArgo -->|agent| WorkerEU1
+    TLDArgo -->|agent| WorkerEU2
+    TLDArgo -->|agent| WorkerAP1
+    TLDArgo -->|agent| WorkerAP2
+    TLDArgo -.->|"agent (intermittent backhaul)"| WorkerShip
     TLDKargo -. independent gate .-> USRegion
     TLDKargo -. independent gate .-> EURegion
     TLDKargo -. independent gate .-> APRegion
+    TLDKargo -. independent gate .-> Edge
 ```
 
 ### Layer 1 — TLD control plane (top of the diagram)
@@ -76,6 +85,33 @@ The seed's responsibilities, in order of importance:
 Worker clusters run nothing but the application workloads. **Spokes are kept dumb on purpose** — the platform team's disaster-recovery story for a worker is "delete it and let the seed reconstruct it." If you find yourself needing to back up a worker's state, the architecture has a leak. Anything stateful at the worker level is a sign that something belongs on the seed instead.
 
 Per-region promotion gates work because the worker clusters are uniform within a region: when Kargo promotes guestbook to `prod-eu-west`, every eu-west worker that's part of `prod-eu-west` gets the new manifests. A green us-east promotion does not unblock eu-west because the gates are independent — different regulatory windows, different rollout-risk profiles, a bug that fires only on European data residency settings shouldn't ride into APAC because us-east was healthy.
+
+## Online vs. offline — the cruise-ship pattern
+
+The diagram so far assumes every region has a stable backhaul to the TLD control plane. That's true for cloud regions. It is **not true** for a real chunk of tier-4 customers — cruise ships, oil rigs, mining sites, military forward operating bases, ships at sea, remote research stations, anything with a satellite uplink that goes dark when weather rolls in or the ship sails between coverage zones.
+
+These customers want the same platform contract — file an XDatabase claim, deploy a chart via Kargo, hit Akuity Audit Logs for evidence — but they need it to **degrade gracefully** when the backhaul is unreliable. The architectural shifts at this tier:
+
+### What "the spoke is dumb" stops being true for
+
+Tier 4's default disaster-recovery story for a worker is "delete it and let the seed reconstruct it." That assumes you can reach the seed. On a ship at sea you can't, sometimes for days. The disconnected spoke needs to be self-sufficient between reconnects:
+
+- **Argo CD agent caches the last desired state.** When the TLD control plane is unreachable, the agent keeps reconciling against what it last pulled. New deployments don't land, but existing workloads stay healthy and self-heal against pod-level failures.
+- **The onboard seed cluster is not optional.** Cloud regions can in principle skip the regional seed and let the TLD push directly to workers; intermittent-edge deployments cannot. Each ship / rig / site runs its own seed cluster with Crossplane locally so claim reconciliation continues without backhaul.
+- **YugabyteDB's local nodes keep accepting writes.** xCluster replication catches up when the link comes back. The application sees a working database the whole time; the eventual consistency story is the price.
+- **Audit logs store-and-forward.** The agent buffers audit events locally (bounded by disk) and replays them to the TLD aggregator when the link is back. Compliance evidence is never lost; it is sometimes delayed.
+
+### What can't happen during a disconnect
+
+- **Promotions don't reach the disconnected fleet.** Kargo's per-region gate model handles this naturally — a `prod-fleet-at-sea` Stage simply doesn't progress until the ship reconnects. Other regions promote independently.
+- **Akuity Intelligence runbooks fire on stale data.** The fleet-wide weekly incident summary will undercount disconnected-fleet incidents until those audit events catch up. The task itself flags "X regions reporting stale" so the on-call manager knows.
+- **Cross-region YugabyteDB reads degrade to local.** The disconnected node serves local data only. Writes that need cross-region consistency (rare in this profile — most ship workloads are read-mostly or local-write) are surfaced as conflict on reconnect, resolved per the YB conflict policy the platform team picks.
+
+### What the framework gives you for free
+
+This isn't a tier-4-only conversation — the same primitives let you handle planned maintenance windows, regional cloud outages, and partial-availability degraded states. The fact that the platform has a **per-region Kargo gate**, a **regional seed cluster doing the local Crossplane reconciliation**, and a **store-and-forward audit pipeline** means the disconnected-edge case is just an extreme of patterns the platform already supports.
+
+The buying conversation: most tier-4 customers don't have ships at sea, but most of them have at least one region where the network is "less reliable than the others" — a partner-managed datacenter, a regulated environment behind extra firewalls, a region with smaller cloud presence and worse peering. The cruise-ship architecture is the answer for the worst case, and the same answer covers the merely-flaky case for free.
 
 ## Why YugabyteDB at this tier
 
