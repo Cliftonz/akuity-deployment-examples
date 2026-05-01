@@ -20,13 +20,14 @@ spec:
         # Match both the namespace label AND the pod label. If someone
         # misconfigures the ingress namespace, we don't accidentally allow
         # traffic; if someone runs an unrelated pod in that namespace, it
-        # still doesn't get to talk to us.
+        # still doesn't get to talk to us. Traefik runs in the `traefik`
+        # namespace with pod label `app.kubernetes.io/name: traefik`.
         - namespaceSelector:
             matchLabels:
-              kubernetes.io/metadata.name: ingress-nginx
+              kubernetes.io/metadata.name: traefik
           podSelector:
             matchLabels:
-              app.kubernetes.io/name: ingress-nginx
+              app.kubernetes.io/name: traefik
       ports:
         - protocol: TCP
           port: 8080

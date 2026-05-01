@@ -9,6 +9,8 @@ resources:
   - projects/platform.yaml
   - projects/business.yaml
   - applicationsets/business-apps.yaml
-  - apps/ingress-nginx.yaml
   - apps/cert-manager.yaml
   - apps/kargo-pipelines.yaml
+  # No ingress-nginx Application — the cluster runs Traefik with Gateway API
+  # support already; HTTPRoutes in the guestbook namespaces attach directly
+  # to the existing `traefik/traefik-gateway` Gateway.

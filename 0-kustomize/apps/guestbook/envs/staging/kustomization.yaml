@@ -15,6 +15,13 @@ patches:
         path: /metadata/name
         value: guestbook-staging
   - target:
+      kind: HTTPRoute
+      name: guestbook
+    patch: |-
+      - op: replace
+        path: /spec/hostnames/0
+        value: guestbook-staging.local
+  - target:
       kind: Deployment
       name: guestbook
     patch: |-

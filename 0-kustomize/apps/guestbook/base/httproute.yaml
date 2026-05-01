@@ -1,0 +1,26 @@
+# HTTPRoute attaches guestbook's Service to the cluster's existing Traefik
+# Gateway in the `traefik` namespace. Cross-namespace attachment requires
+# the Gateway's listener to allow routes from this namespace — see the
+# README for the one-line patch on the Gateway side.
+#
+# Tier-0 simplification: one HTTPRoute, one Service backend, no path
+# rewrites. Per-env hostname is patched in by the env overlay.
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: guestbook
+spec:
+  parentRefs:
+    - name: traefik-gateway
+      namespace: traefik
+      sectionName: web
+  hostnames:
+    - guestbook.local        # env overlay replaces this with guestbook-<env>.local
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /
+      backendRefs:
+        - name: guestbook
+          port: 80

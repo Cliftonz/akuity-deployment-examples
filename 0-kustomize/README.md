@@ -11,21 +11,52 @@ The hydrated output lands on `env/{dev,staging,prod}` branches; Argo CD reconcil
 ```
 0-kustomize/
 ├── apps/guestbook/
-│   ├── base/                       # deployment, service, namespace, networkpolicy, pdb, serviceaccount
-│   └── envs/{dev,staging,prod}/    # per-env image tag + namespace patch
+│   ├── base/                       # deployment, service, namespace, networkpolicy, pdb, serviceaccount, httproute
+│   └── envs/{dev,staging,prod}/    # per-env image tag + namespace + hostname patches
 ├── argocd/
 │   ├── projects/{business,platform}.yaml
 │   ├── applicationsets/business-apps.yaml
-│   └── apps/{ingress-nginx,cert-manager,kargo-pipelines}.yaml
+│   └── apps/{cert-manager,kargo-pipelines}.yaml
 ├── kargo/
 │   ├── projects/{kargo-simple,project-config}.yaml
-│   ├── warehouses/guestbook.yaml             # subscribes to GHCR image
+│   ├── warehouses/guestbook.yaml             # subscribes to gcr.io/google-samples/hello-app
 │   ├── stages/{dev,staging,prod}.yaml        # step-based promotion (modern Kargo v1.x)
 │   └── analysis-templates/guestbook-http-probe.yaml
 ├── platform/
-│   ├── ingress-nginx/{namespace,values}.yaml
 │   └── cert-manager/{namespace,cluster-issuer,values}.yaml
 └── rendered/{dev,staging,prod}/    # Kargo writes hydrated manifests here per env branch
+```
+
+## Ingress: Gateway API + existing Traefik Gateway
+
+The cluster runs Traefik with Gateway API support; tier 0 attaches to the existing `traefik/traefik-gateway` via per-namespace `HTTPRoute` resources rather than installing its own ingress controller. Cross-namespace attachment (HTTPRoute in `guestbook-<env>` → Gateway in `traefik`) requires the listener's `allowedRoutes.namespaces` to permit it. The guestbook namespaces ship the label `routes-from: guestbook`; the listener uses `from: Selector` matching that label.
+
+If the cluster's Gateway listener is more restrictive (default `from: Same`), patch it once:
+
+```bash
+kubectl patch gateway traefik-gateway -n traefik --type=merge -p '{
+  "spec": {
+    "listeners": [{
+      "name": "web",
+      "port": 8000,
+      "protocol": "HTTP",
+      "allowedRoutes": {
+        "namespaces": {
+          "from": "Selector",
+          "selector": { "matchLabels": { "routes-from": "guestbook" } }
+        }
+      }
+    }]
+  }
+}'
+```
+
+Verify acceptance:
+
+```bash
+kubectl get httproute -n guestbook-dev guestbook \
+  -o jsonpath='{.status.parents[0].conditions[?(@.type=="Accepted")].status}'
+# Expect: True
 ```
 
 ## Apply

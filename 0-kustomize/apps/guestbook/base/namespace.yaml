@@ -10,6 +10,11 @@ metadata:
     # NetworkPolicies match on this label — better to declare it than depend
     # on the server to fill it in.
     kubernetes.io/metadata.name: guestbook
+    # Gateway API listener selector. Traefik's `traefik-gateway` listener
+    # uses `allowedRoutes.namespaces.from: Selector` matching this label,
+    # so HTTPRoutes in this namespace attach to the cluster Gateway in
+    # the `traefik` namespace.
+    routes-from: guestbook
     # Pod Security Admission is the admission-time backstop. NetworkPolicy
     # handles east-west; PSA stops a privileged container from landing here
     # in the first place.

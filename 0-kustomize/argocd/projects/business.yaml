@@ -39,6 +39,10 @@ spec:
       kind: "*"
     - group: policy
       kind: "*"
+    # Gateway API — guestbook ships HTTPRoute resources that attach to the
+    # cluster's Traefik Gateway in the `traefik` namespace.
+    - group: gateway.networking.k8s.io
+      kind: "*"
   # No `roles:` block at tier 0. The founders are the only operators and
   # use the local Argo CD admin account directly. Tier 1 introduces SSO
   # via Dex + per-AppProject role bindings against IdP groups.
