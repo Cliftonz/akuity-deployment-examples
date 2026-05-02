@@ -26,7 +26,7 @@ The base assignment + every item on the bonus list, with where each lives:
 | SSO configuration (Dex w/ VCS as OIDC) | `argocd/configmaps/argocd-cm.yaml` at tiers 1+ — connector blocks for GitHub-as-OIDC, Okta, Entra, Google Workspace. Designed-not-wired (placeholder OAuth credentials) |
 | Rendered manifest pattern in Kargo | Used at every tier; canonical writeup at [`docs/rendered-manifests-pattern.md`](docs/rendered-manifests-pattern.md) |
 | Component vs business workload split | Separate `platform` and `business` AppProjects at every tier; component workloads (ingress-nginx, cert-manager, monitoring, admission policies) sit in their own project with their own RBAC and sync windows |
-| Argo/Kargo definitions for common addons | ingress-nginx + cert-manager at every tier; kube-prometheus-stack from tier 1+; Loki from tier 2+; Thanos at tier 4 |
+| Argo/Kargo definitions for common addons | cert-manager at every tier; ingress-nginx from tier 1+ (tier 0 attaches to the cluster's existing Traefik Gateway via HTTPRoute — one less component to operate); kube-prometheus-stack from tier 1+; Loki from tier 2+; Thanos at tier 4 |
 | Akuity Intelligence | `tasks/` and `runbooks/` directories in every tier folder with progressively richer scope; canonical writeup at [`docs/tasks-and-runbooks.md`](docs/tasks-and-runbooks.md) |
 | Audit Logs | `akuity/audit-log-stream.yaml` at tier 1+ (single SIEM destination); `akuity/audit-log-fleet-export.yaml` at tier 4 (per-region streams + fleet aggregator) |
 
