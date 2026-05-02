@@ -73,6 +73,29 @@ This bootstraps the AppProjects, the ApplicationSet, the platform component apps
 - **Rendered-manifests promotion.** Kargo's promotion steps run `kustomize-build` in CI and commit the output to `env/<stage>` branches. Argo CD applies plain YAML; PR diffs are literal Kubernetes objects, not values changes.
 - **Component vs. business workload separation.** ingress-nginx and cert-manager get their own Argo CD `AppProject` and never go through Kargo. Guestbook does.
 
+## Changes from the base Kargo Quickstart
+
+The assignment asks for at least one beneficial deviation from the stock tutorial. Several here, each with a concrete reason:
+
+- **Digest-pinned freight, not tags.** `kustomize-set-image` uses `imageFrom(vars.imageRepo).Digest` instead of the discovered tag. Re-tagging an already-approved digest in the registry no longer slips through; freight identity is the bytes, not the label.
+- **Stage verification gate.** Each Stage runs the [`guestbook-http-probe`](kargo/analysis-templates/guestbook-http-probe.yaml) `AnalysisTemplate` after `argocd-update` reports synced. Five 2xx responses against the in-cluster Service before freight becomes eligible upstream — "Argo CD says synced" is not the same as "the app actually works." Drop-in replacement for a Prometheus query in a real environment.
+- **Scoped AppProjects, not `*/*`.** [`business`](argocd/projects/business.yaml) and [`platform`](argocd/projects/platform.yaml) enumerate their `clusterResourceWhitelist` and `destinations` explicitly. A merged PR adding `apps/guestbook-evil/envs/dev/` or a sneaky `ClusterRoleBinding` has nowhere to land.
+- **Auto-promote at the ProjectConfig level, not per-Stage annotations.** Kargo v1.x moved promotion policy onto [`ProjectConfig`](kargo/projects/project-config.yaml). Only `dev` is listed; staging and prod default to manual.
+- **Sync window with timezone pinning.** [`platform.yaml`](argocd/projects/platform.yaml) freezes Friday 22:00 ET → Monday 10:00 ET in `America/New_York`. UTC schedules drift twice a year with DST and put the freeze in the wrong place. `manualSync: true` so on-call can break it for a real fire.
+- **Gateway API attach instead of a new ingress controller.** The cluster already runs Traefik with Gateway API; tier 0 ships per-namespace `HTTPRoute` resources that attach to the existing `traefik/traefik-gateway` rather than installing ingress-nginx. One less component, one less upgrade path.
+- **Client-side apply on the business ApplicationSet.** K8s 1.30+ added `.status.terminatingReplicas` to `Deployment` and Argo CD's bundled OpenAPI schema doesn't yet know that field; SSA diff blows up parsing the live resource. Comment in [`business-apps.yaml`](argocd/applicationsets/business-apps.yaml) records the why so the next person doesn't "fix" it back.
+- **`prune: false` on the Kargo CR Application.** [`kargo-pipelines.yaml`](argocd/apps/kargo-pipelines.yaml) refuses to self-heal Kargo CRs. A transient render error producing empty output would otherwise prune live Stages and take freight history with them. Drift here gets a manual sync.
+- **App-of-apps for the Kargo control plane.** Argo CD reconciles the entire `kargo/` directory through a single Application, so changing the promotion model is a regular GitOps PR — not `kubectl apply`.
+
+## Assumptions
+
+- **Cluster runs Traefik with Gateway API enabled** and exposes a `traefik/traefik-gateway` Gateway. If yours doesn't, swap the [`HTTPRoute`](apps/guestbook/base/httproute.yaml) for an `Ingress` and add an ingress controller to the platform AppProject.
+- **Argo CD and Kargo run in Akuity** (managed control plane). The cluster has the Akuity Agent installed and an outbound tunnel back. The bootstrap `kubectl apply -k argocd/` lands the AppProjects, ApplicationSet, and platform Apps; Akuity-hosted Argo CD takes it from there.
+- **Single workload cluster.** ApplicationSet uses a list generator over envs, not a cluster generator. The multi-cluster fan-out lives in tier 4.
+- **`env/<stage>` branches are created by Kargo on first promotion.** The `git-clone` step uses `create: true`, so the branches don't need to pre-exist. The `rendered/{dev,staging,prod}/` directories on `main` are placeholders; the real hydrated YAML lives on the env branches after the first promote.
+- **Public demo image (`gcr.io/google-samples/hello-app`).** No registry credentials are wired. Tags `1.0` and `2.0` exist; `semverConstraint: ">=1.0.0"` keeps any future mutable tags (`latest`, `canary`) out of the discovery set.
+- **Founders are the only operators.** No SSO, no audit logs, no per-AppProject role bindings — those are tier 1 once a real auditor appears. See [`NARRATIVE.md`](NARRATIVE.md) for the trigger that moves this tier forward.
+
 ## Compliance posture
 
 A tier-0 company is mostly **pre-compliance**. They're small enough that no auditor is asking yet, and the technical controls a SOC 2 firm would expect (SSO with role bindings, audit-log SIEM, change-review evidence) aren't in place — see "What's missing on purpose." The compliance work that *does* show up at this stage:

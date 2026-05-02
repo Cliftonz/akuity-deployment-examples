@@ -52,4 +52,8 @@ spec:
             maxDuration: 5m
         syncOptions:
           - CreateNamespace=true
-          - ServerSideApply=true
+          # Client-side apply on purpose. K8s 1.30+ added
+          # .status.terminatingReplicas to Deployment, and Argo CD's bundled
+          # OpenAPI schema doesn't yet know that field — SSA diff blows up
+          # parsing the live resource. Client-side apply doesn't go through
+          # that typed-value path.
