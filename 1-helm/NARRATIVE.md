@@ -45,11 +45,41 @@ Three things become visible at tier 1 that were absent at tier 0. First, **Helm 
 
 Second, **the IdP enters the picture**. SSO is not optional once you have ten engineers and an auditor. Akuity's Dex integration handles the standard connectors (Okta, Entra, Google Workspace, GitHub) without the platform team operating Dex themselves.
 
-Third, **the repo layout goes portfolio-style**. Per-application config repos owned by the teams that ship them, plus a separate platform repo for shared component workloads. The platform repo holds ingress-nginx, cert-manager, Kargo CRs; the per-app repos hold charts and per-env values. The boundary maps cleanly to AppProject RBAC.
+Third, **the repo layout goes portfolio-style**. Per-application config repos owned by the teams that ship them, plus a separate platform repo for shared component workloads. The platform repo holds Traefik, cert-manager, Kargo CRs; the per-app repos hold charts and per-env values. The boundary maps cleanly to AppProject RBAC.
 
 ## Where Akuity fits
 
 Compliance-grade GitOps as a service. Audit logs and SSO stop being nice-to-haves the moment the auditor asks for them, and self-hosting Argo CD at this stage means the platform team owns the security posture of the GitOps control plane itself. Akuity absorbs that. Akuity Intelligence starts paying for itself here because investigation time on broken syncs is now a real budget line, and the platform team is small enough that every hour spent debugging Argo CD internals is an hour not spent on the abstractions their developers actually need.
+
+## The buying conversation
+
+```mermaid
+flowchart LR
+    subgraph Pain["Tier 1 reality"]
+        SOC["SOC 2 Type 1<br/>kickoff this quarter"]
+        Plat["2–4 person<br/>platform team"]
+        Self["Self-hosted Argo CD<br/>upgraded on weekends"]
+        Triage["Sync breaks;<br/>20-tab debug session"]
+    end
+
+    subgraph Akuity["Akuity tier-1 wins"]
+        SSO["Dex + Okta/Entra/Google<br/>wired in an hour"]
+        AuditExp["Audit Logs<br/>streamed to your SIEM"]
+        Intel["Akuity Intelligence;<br/>broken-sync triage<br/>in minutes"]
+        Upgrades["Argo CD upgrades;<br/>Akuity's problem"]
+    end
+
+    Pain ==> Akuity
+
+    Akuity --> Out1["SOC 2 evidence<br/>collected automatically"]
+    Akuity --> Out2["Platform team back<br/>to building abstractions,<br/>not operating Argo CD"]
+    Akuity --> Out3["Time-to-resolution<br/>on incidents drops<br/>by an order of magnitude"]
+
+    style Pain fill:#fff3e0
+    style Akuity fill:#e8f5e9
+```
+
+The pitch in one sentence: *your platform team is too small to operate Argo CD AND build an internal platform; pick one and let us handle the other.* Audit logs and SSO are the wedge; Intelligence is the deal-closer once they see how much time it saves on a single P1 sync.
 
 ## Tradeoffs and what's missing
 

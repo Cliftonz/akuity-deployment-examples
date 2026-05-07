@@ -9,3 +9,6 @@ database:
   secretName: guestbook-yugabyte-prod
 
 # eu-west lands on GCP via the regional seed's EnvironmentConfig.
+
+httpRoute:
+  hostname: guestbook-prod-eu-west.example.com

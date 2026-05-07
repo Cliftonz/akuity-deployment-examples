@@ -7,3 +7,6 @@ image:
 
 database:
   secretName: guestbook-postgres-staging
+
+httpRoute:
+  hostname: guestbook-staging.local

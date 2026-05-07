@@ -33,4 +33,4 @@ spec:
           # The platform namespaces install Helm charts that may legitimately
           # use untagged images mid-rollout. PSA + the platform AppProject
           # already constrain them, so we don't double-up here.
-          values: [kube-system, ingress-nginx, cert-manager, argocd, kargo, kargo-simple]
+          values: [kube-system, traefik, cert-manager, argocd, kargo, kargo-simple]

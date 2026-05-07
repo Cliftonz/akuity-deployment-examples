@@ -11,3 +11,6 @@ database:
 # ap-southeast lands on the on-prem Composition via the regional seed's
 # EnvironmentConfig. Local Postgres on the seed cluster's persistent
 # storage; no hyperscaler involvement.
+
+httpRoute:
+  hostname: guestbook-prod-ap-southeast.example.com

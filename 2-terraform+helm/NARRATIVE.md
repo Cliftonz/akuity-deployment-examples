@@ -50,6 +50,33 @@ Akuity does **not** solve the wild-west problem at this tier. Akuity reconciles 
 
 The honest SE conversation here is "we can show you how the next tier closes these gaps; we cannot close them for you because the gap is organizational, not technical."
 
+## The buying conversation
+
+```mermaid
+flowchart TB
+    subgraph Today["Tier 2 today"]
+        Apps["Apps in GitOps<br/>(this part works)"]
+        Wild["Terraform: 5 teams,<br/>5 state files,<br/>3 console-clickers"]
+        Mesh["No service mesh;<br/>SOC 2 CC6.6 finding"]
+        Gap["Seam between<br/>app and infra<br/>is nobody's"]
+    end
+
+    Apps --> AkuityNow["Akuity<br/>already reconciling git"]
+    Wild -.->|"audit finding"| CISO["CISO conversation"]
+
+    AkuityNow ==>|"same control plane,<br/>no migration"| Tier3["Tier 3 path:<br/>XRD claims behind<br/>Crossplane OR<br/>Terraform-operator"]
+
+    Tier3 --> Out1["Every database<br/>review-gated in git"]
+    Tier3 --> Out2["State location<br/>declared, not folkloric"]
+    Tier3 --> Out3["Drift detection free;<br/>auditor question answered"]
+
+    style AkuityNow fill:#e8f5e9
+    style Today fill:#fff3e0
+    style Tier3 fill:#e3f2fd
+```
+
+The pitch in one sentence: *Akuity is already the right control plane for tier 3; the only thing missing is the platform team's authorization to define abstractions.* Crucially, Akuity is **not** the thing that fails the audit — Terraform-from-laptops is. Akuity is the path out. No GitOps-platform switch required; the same Argo CD that's reconciling charts today will reconcile XRD claims tomorrow.
+
 ## Packaging model: from rendered branches to immutable artifacts
 
 Tier 0 and tier 1 use the **rendered-manifests pattern**: Kargo runs `kustomize build` or `helm template` and commits hydrated YAML to an `env/<stage>` branch. Argo CD watches the branch. Promotion currency is a git commit SHA on the config repo. This is the cheapest thing that works and the right call when the team is small.

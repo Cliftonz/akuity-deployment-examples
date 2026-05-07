@@ -1,0 +1,70 @@
+# Traefik values. Conservative on purpose — this is the front door, and every
+# change has cluster-wide blast radius. PRs here get reviewed like
+# infrastructure changes, not feature work.
+#
+# Why Traefik instead of ingress-nginx: ingress-nginx (the Kubernetes-
+# maintained chart) has entered deprecation. Traefik is the active
+# replacement and ships first-class Gateway API support, which is the
+# direction the business charts attach to (HTTPRoute, not Ingress).
+deployment:
+  replicas: 2
+
+# Gateway API is the integration surface — business charts ship HTTPRoute
+# resources that attach to the Traefik Gateway listener.
+providers:
+  kubernetesGateway:
+    enabled: true
+  kubernetesIngress:
+    # Leave classic Ingress on for migration windows. Anything new should
+    # use HTTPRoute; this is the off-ramp for legacy charts.
+    enabled: true
+
+# Single shared Gateway in the traefik namespace. Per-namespace HTTPRoutes
+# attach via allowedRoutes.namespaces.from: Selector matching the
+# `routes-from` label on the workload namespace.
+gateway:
+  enabled: true
+  name: traefik-gateway
+  namespace: traefik
+  listeners:
+    web:
+      port: 8000
+      protocol: HTTP
+      namespacePolicy:
+        from: Selector
+        selector:
+          matchLabels:
+            routes-from: business
+
+service:
+  type: LoadBalancer
+  spec:
+    externalTrafficPolicy: Local
+
+# Prometheus + ServiceMonitor. Without these, request rate / 5xx / latency
+# are dark. Label has to match the Prometheus Operator install on this
+# cluster — kube-prometheus-stack uses release=kube-prometheus-stack.
+metrics:
+  prometheus:
+    enabled: true
+    serviceMonitor:
+      enabled: true
+      additionalLabels:
+        release: kube-prometheus-stack
+      interval: 30s
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 128Mi
+  limits:
+    cpu: 500m
+    memory: 512Mi
+
+podDisruptionBudget:
+  enabled: true
+  minAvailable: 1
+
+ingressRoute:
+  dashboard:
+    enabled: false   # off by default; on-call port-forwards if needed

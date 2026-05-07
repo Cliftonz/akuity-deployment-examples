@@ -12,6 +12,6 @@ resources:
   - apps/kube-prometheus-stack.yaml   # monitoring (Prometheus + Grafana + Alertmanager)
   - apps/admission-policies.yaml      # ValidatingAdmissionPolicy + Binding
   - apps/argocd-config.yaml          # syncs configmaps/ — Dex + Notifications
-  - apps/ingress-nginx.yaml
+  - apps/traefik.yaml
   - apps/cert-manager.yaml
   - apps/kargo-pipelines.yaml

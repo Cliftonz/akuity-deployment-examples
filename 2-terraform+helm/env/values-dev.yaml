@@ -7,3 +7,6 @@ image:
 
 database:
   secretName: guestbook-postgres-dev
+
+httpRoute:
+  hostname: guestbook-dev.local

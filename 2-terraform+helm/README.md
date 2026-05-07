@@ -17,7 +17,7 @@ Same guestbook from tier 1, now with a Postgres backend. The Helm chart adds an 
 │   └── README.md                      # apply instructions; what's wrong with this picture
 ├── argocd/                            # unchanged from tier 1; Argo CD never sees the DB
 ├── kargo/                             # unchanged from tier 1; promotes the chart only
-├── platform/                          # ingress-nginx + cert-manager (unchanged)
+├── platform/                          # Traefik + cert-manager (unchanged)
 └── rendered/{dev,staging,prod}/
 ```
 

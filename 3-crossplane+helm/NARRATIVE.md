@@ -56,6 +56,44 @@ This is the canonical two-loop story. **Crossplane is programmability on the way
 
 This is where the multi-tenant, multi-cluster, fleet-aware features earn their keep. AppProject-level RBAC mapped to platform-vs-application-team boundaries. ApplicationSet cluster generators rolling new component workloads across the fleet without per-cluster YAML. Audit logs are now table stakes for security review of *every* deployment, not just compliance-window evidence. The buying conversation shifts to "we built a platform; we need a managed control plane for the GitOps half of it so our platform team can focus on the abstractions, not on operating Argo CD at scale." Self-hosting becomes viable here in raw cost terms, but rarely in opportunity-cost terms; the platform team's time is the constraint.
 
+## The buying conversation
+
+```mermaid
+flowchart LR
+    subgraph IDP["Your internal developer platform"]
+        Portal["Backstage / Port<br/>developer portal"]
+        XRDs["Crossplane XRDs<br/>(platform team owns)"]
+        CICD["Build / test pipelines"]
+        IstioMesh["Istio service mesh"]
+        Obs["Observability stack"]
+    end
+
+    Portal --> XRDs
+    XRDs --> Compose["Compositions →<br/>cloud / on-prem"]
+
+    subgraph Akuity["Akuity = managed GitOps half of the IDP"]
+        ArgoFleet["Argo CD;<br/>50+ clusters,<br/>one control plane"]
+        KargoFleet["Kargo;<br/>per-stage gates,<br/>fleet-wide"]
+        RBAC["AppProject RBAC<br/>matches platform/app<br/>boundary"]
+        AuditEnt["Audit Logs;<br/>every deploy,<br/>every cluster"]
+    end
+
+    XRDs -.->|"rendered manifests"| ArgoFleet
+    KargoFleet --> ArgoFleet
+    ArgoFleet --> Fleet[("50+ clusters<br/>multi-cloud")]
+
+    IDP ==> Akuity
+
+    Akuity --> Out1["Platform team owns<br/>abstractions, not<br/>Argo CD operations"]
+    Akuity --> Out2["Onboard a new team<br/>= one AppProject,<br/>not a Helm chart"]
+    Akuity --> Out3["Compliance evidence<br/>covers every cluster<br/>without bolted-on tools"]
+
+    style IDP fill:#e3f2fd
+    style Akuity fill:#e8f5e9
+```
+
+The pitch in one sentence: *you're already building an internal developer platform; let us be the managed GitOps half of it so your team can spend its time on the parts only you can build.* The buyer here is rarely the developer — it's the platform engineering director who's been told to ship an IDP and has a finite head-count budget. Crossplane, Istio, and your portal are non-negotiable build-it-yourself pieces. Argo CD at 50-cluster scale isn't.
+
 ## The objection you will get
 
 Crossplane is sometimes positioned as competitive with Argo CD because both reconcile against a desired state. They are not. Crossplane reconciles *infrastructure it composed*; Akuity reconciles *manifests in git*. Customers running both should land on the pattern above (Crossplane composes infrastructure that Akuity leverages in deployments ), not on a fight between the two reconciliation loops. This is the conversation that saves deals where the customer walked in expecting a turf war.

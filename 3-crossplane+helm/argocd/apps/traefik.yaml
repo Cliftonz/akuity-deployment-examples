@@ -1,3 +1,9 @@
+# Traefik replaces ingress-nginx as the cluster ingress / Gateway API
+# implementation. ingress-nginx (the Kubernetes-maintained chart) entered
+# deprecation; Traefik is the active replacement and ships first-class
+# Gateway API support, which is what HTTPRoutes in the business charts
+# attach to.
+#
 # Direct Application — component workloads aren't generator-driven on
 # purpose. Each one is a deliberate PR review.
 #
@@ -7,7 +13,7 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: ingress-nginx
+  name: traefik
   namespace: argocd
   annotations:
     notifications.argoproj.io/subscribe.on-sync-failed.slack: <slack-channel>
@@ -19,22 +25,22 @@ spec:
   sources:
     - repoURL: https://github.com/Cliftonz/akuity-deployment-examples
       targetRevision: HEAD
-      path: 3-crossplane+helm/platform/ingress-nginx
+      path: 3-crossplane+helm/platform/traefik
       directory:
         include: namespace.yaml
-    - repoURL: https://kubernetes.github.io/ingress-nginx
-      chart: ingress-nginx
-      targetRevision: 4.15.1
+    - repoURL: https://traefik.github.io/charts
+      chart: traefik
+      targetRevision: 32.1.1
       helm:
-        releaseName: ingress-nginx
+        releaseName: traefik
         valueFiles:
-          - $values/platform/ingress-nginx/values.yaml
+          - $values/platform/traefik/values.yaml
     - repoURL: https://github.com/Cliftonz/akuity-deployment-examples
       targetRevision: HEAD
       ref: values
   destination:
     name: in-cluster
-    namespace: ingress-nginx
+    namespace: traefik
   syncPolicy:
     automated:
       prune: false

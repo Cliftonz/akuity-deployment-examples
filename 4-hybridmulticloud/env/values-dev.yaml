@@ -7,3 +7,6 @@ image:
 
 database:
   secretName: guestbook-yugabyte-dev
+
+httpRoute:
+  hostname: guestbook-dev.local

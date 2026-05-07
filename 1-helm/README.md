@@ -26,13 +26,13 @@ The reason to move from Kustomize to Helm at this tier is templating leverage, n
 ├── argocd/
 │   ├── projects/{business,platform}.yaml
 │   ├── applicationsets/business-apps.yaml   # list generator (one element per env)
-│   └── apps/{ingress-nginx,cert-manager,kargo-pipelines}.yaml
+│   └── apps/{traefik,cert-manager,kargo-pipelines}.yaml
 ├── kargo/
 │   ├── projects/{kargo-simple,project-config}.yaml
 │   ├── warehouses/guestbook.yaml
 │   ├── stages/{dev,staging,prod}.yaml        # helm-update-image + helm-template
 │   └── analysis-templates/guestbook-http-probe.yaml
-├── platform/                                  # ingress-nginx + cert-manager (unchanged from tier 0)
+├── platform/                                  # Traefik + cert-manager (unchanged from tier 0)
 └── rendered/{dev,staging,prod}/.gitkeep
 ```
 

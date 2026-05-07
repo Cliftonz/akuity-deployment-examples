@@ -23,8 +23,11 @@ cd "$REPO_ROOT"
 SHARED=(
   "argocd/projects/platform.yaml:1-helm,2-terraform+helm,3-crossplane+helm,4-hybridmulticloud"
   "argocd/projects/business.yaml:1-helm,2-terraform+helm,3-crossplane+helm,4-hybridmulticloud"
-  "platform/ingress-nginx/namespace.yaml:0-kustomize,1-helm,2-terraform+helm,3-crossplane+helm,4-hybridmulticloud"
-  "platform/ingress-nginx/values.yaml:0-kustomize,1-helm,2-terraform+helm,3-crossplane+helm,4-hybridmulticloud"
+  # Tier 0 attaches HTTPRoutes to the cluster's existing Traefik Gateway and
+  # ships no platform Helm install of its own; tiers 1+ install Traefik via
+  # the platform AppProject and share these files byte-for-byte.
+  "platform/traefik/namespace.yaml:1-helm,2-terraform+helm,3-crossplane+helm,4-hybridmulticloud"
+  "platform/traefik/values.yaml:1-helm,2-terraform+helm,3-crossplane+helm,4-hybridmulticloud"
   "platform/cert-manager/namespace.yaml:0-kustomize,1-helm,2-terraform+helm,3-crossplane+helm,4-hybridmulticloud"
   "platform/cert-manager/cluster-issuer.yaml:0-kustomize,1-helm,2-terraform+helm,3-crossplane+helm,4-hybridmulticloud"
   "platform/cert-manager/values.yaml:0-kustomize,1-helm,2-terraform+helm,3-crossplane+helm,4-hybridmulticloud"

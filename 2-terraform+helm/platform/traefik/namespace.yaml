@@ -1,14 +1,14 @@
 apiVersion: v1
 kind: Namespace
 metadata:
-  name: ingress-nginx
+  name: traefik
   labels:
-    app.kubernetes.io/name: ingress-nginx
+    app.kubernetes.io/name: traefik
     app.kubernetes.io/part-of: platform
     # Set the metadata.name label explicitly so NetworkPolicies elsewhere can
     # target this namespace. kube-apiserver auto-applies it on v1.22+, but
     # we don't want to depend on that.
-    kubernetes.io/metadata.name: ingress-nginx
+    kubernetes.io/metadata.name: traefik
     pod-security.kubernetes.io/enforce: baseline
     pod-security.kubernetes.io/audit: restricted
     pod-security.kubernetes.io/warn: restricted

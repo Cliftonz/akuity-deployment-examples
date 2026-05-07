@@ -57,7 +57,7 @@ The buying conversation: "we already have the abstraction; now we need it to spa
 ├── platform/
 │   ├── admission/                              # VAPs (Enforce mode)
 │   ├── kube-prometheus-stack/, loki/, thanos/  # fleet observability
-│   ├── ingress-nginx/, cert-manager/
+│   ├── Traefik/, cert-manager/
 ├── akuity/
 │   ├── audit-log-fleet-export.yaml             # per-region streams + fleet aggregator
 │   └── README.md

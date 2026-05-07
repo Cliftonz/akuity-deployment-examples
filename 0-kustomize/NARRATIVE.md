@@ -42,6 +42,34 @@ The promotion currency is the **rendered manifest pattern** (which is an anti-pa
 
 The value proposition is *they do not have to run Argo CD or build a promotion process themselves.* Self-hosted Argo CD looks free until someone has to upgrade it, debug a stuck sync, recover from an OOMed application controller, or wire SSO for the first auditor. Kargo replaces the bash-and-prayer promotion script every team writes and then regrets. Time-to-first-deploy on Akuity is hours; rolling your own is weeks plus a permanent on-call rotation.
 
+## The buying conversation
+
+```mermaid
+flowchart LR
+    subgraph Today["The 5–20 engineer reality today"]
+        CTO["CTO is also<br/>the SRE"]
+        Script["bash deploy script<br/>on its 3rd rewrite"]
+        Page["3am page;<br/>nobody on-call"]
+    end
+
+    subgraph Akuity["What Akuity gives you"]
+        SaaS["Argo CD + Kargo<br/>fully managed"]
+        Tunnel["Outbound agent;<br/>no inbound surface<br/>to harden"]
+        Cheap["Starter tier covers<br/>1 cluster, 1 team"]
+    end
+
+    Today ==>|"replace"| Akuity
+
+    Akuity --> W1["Hours to first deploy<br/>(weeks rolling your own)"]
+    Akuity --> W2["No GitOps control plane<br/>to upgrade or page on"]
+    Akuity --> W3["Promotion story your<br/>auditor won't laugh<br/>at next year"]
+
+    style Today fill:#fff3e0
+    style Akuity fill:#e8f5e9
+```
+
+The pitch in one sentence: *you keep shipping; we keep the GitOps platform alive.* The CTO's calendar is the constraint at this stage, not the AWS bill.
+
 ## Tradeoffs and what's missing
 
 Deliberately absent at this tier: Helm (Kustomize patches scale fine for small overlays), SSO (founders are the only operators), audit logs (no auditor yet), Crossplane (no shared services to compose), ApplicationSet cluster generators (one cluster, no fan-out). Adding any of these here is over-engineering. The honest SE conversation is "you'll grow into the rest of the platform; here is what triggers each next step."

@@ -55,3 +55,12 @@ database:
   port: 5433
   # Secret name produced by the XDatabase Composition in this namespace.
   secretName: guestbook-yugabyte
+
+# Gateway API HTTPRoute. Attaches to the platform-installed Traefik Gateway
+# in the `traefik` namespace. Per-env values override `hostname`.
+httpRoute:
+  enabled: true
+  gatewayName: traefik-gateway
+  gatewayNamespace: traefik
+  gatewaySectionName: web
+  hostname: guestbook.local

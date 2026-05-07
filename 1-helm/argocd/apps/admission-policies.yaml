@@ -7,7 +7,7 @@
 # install required at this tier.
 #
 # Sync wave -3 so the policies land before the platform Apps; otherwise the
-# first ingress-nginx sync evaluates against missing policies and slips
+# first traefik sync evaluates against missing policies and slips
 # through.
 apiVersion: argoproj.io/v1alpha1
 kind: Application

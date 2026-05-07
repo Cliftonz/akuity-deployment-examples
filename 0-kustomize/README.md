@@ -2,7 +2,7 @@
 
 The simplest possible GitOps shape that still has a real promotion story.
 
-A single Helm-free guestbook app, a Kustomize base with three env overlays, two component workloads (ingress-nginx and cert-manager) installed via Argo CD, and a three-stage Kargo pipeline (dev → staging → prod) that promotes the **rendered** Kubernetes manifests across env branches via `kustomize build`.
+A single Helm-free guestbook app, a Kustomize base with three env overlays, one component workload (cert-manager) installed via Argo CD plus an HTTPRoute that attaches to the cluster's existing Traefik Gateway, and a three-stage Kargo pipeline (dev → staging → prod) that promotes the **rendered** Kubernetes manifests across env branches via `kustomize build`.
 
 The hydrated output lands on `env/{dev,staging,prod}` branches; Argo CD reconciles those branches; promotion PRs show literal API objects diffing.
 
@@ -71,7 +71,7 @@ This bootstraps the AppProjects, the ApplicationSet, the platform component apps
 
 - **GitOps without templating overhead.** Kustomize handles per-env differences with patches; no Helm to learn.
 - **Rendered-manifests promotion.** Kargo's promotion steps run `kustomize-build` in CI and commit the output to `env/<stage>` branches. Argo CD applies plain YAML; PR diffs are literal Kubernetes objects, not values changes.
-- **Component vs. business workload separation.** ingress-nginx and cert-manager get their own Argo CD `AppProject` and never go through Kargo. Guestbook does.
+- **Component vs. business workload separation.** cert-manager (and any other platform component) gets its own Argo CD `AppProject` and never goes through Kargo. Guestbook does.
 
 ## Changes from the base Kargo Quickstart
 
@@ -82,7 +82,7 @@ The assignment asks for at least one beneficial deviation from the stock tutoria
 - **Scoped AppProjects, not `*/*`.** [`business`](argocd/projects/business.yaml) and [`platform`](argocd/projects/platform.yaml) enumerate their `clusterResourceWhitelist` and `destinations` explicitly. A merged PR adding `apps/guestbook-evil/envs/dev/` or a sneaky `ClusterRoleBinding` has nowhere to land.
 - **Auto-promote at the ProjectConfig level, not per-Stage annotations.** Kargo v1.x moved promotion policy onto [`ProjectConfig`](kargo/projects/project-config.yaml). Only `dev` is listed; staging and prod default to manual.
 - **Sync window with timezone pinning.** [`platform.yaml`](argocd/projects/platform.yaml) freezes Friday 22:00 ET → Monday 10:00 ET in `America/New_York`. UTC schedules drift twice a year with DST and put the freeze in the wrong place. `manualSync: true` so on-call can break it for a real fire.
-- **Gateway API attach instead of a new ingress controller.** The cluster already runs Traefik with Gateway API; tier 0 ships per-namespace `HTTPRoute` resources that attach to the existing `traefik/traefik-gateway` rather than installing ingress-nginx. One less component, one less upgrade path.
+- **Gateway API attach instead of a new ingress controller.** The cluster already runs Traefik with Gateway API; tier 0 ships per-namespace `HTTPRoute` resources that attach to the existing `traefik/traefik-gateway` rather than installing its own ingress controller. One less component, one less upgrade path.
 - **Client-side apply on the business ApplicationSet.** K8s 1.30+ added `.status.terminatingReplicas` to `Deployment` and Argo CD's bundled OpenAPI schema doesn't yet know that field; SSA diff blows up parsing the live resource. Comment in [`business-apps.yaml`](argocd/applicationsets/business-apps.yaml) records the why so the next person doesn't "fix" it back.
 - **`prune: false` on the Kargo CR Application.** [`kargo-pipelines.yaml`](argocd/apps/kargo-pipelines.yaml) refuses to self-heal Kargo CRs. A transient render error producing empty output would otherwise prune live Stages and take freight history with them. Drift here gets a manual sync.
 - **App-of-apps for the Kargo control plane.** Argo CD reconciles the entire `kargo/` directory through a single Application, so changing the promotion model is a regular GitOps PR — not `kubectl apply`.

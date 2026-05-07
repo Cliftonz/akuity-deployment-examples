@@ -37,3 +37,12 @@ podSecurityAdmission:
   enforce: restricted
   audit: restricted
   warn: restricted
+
+# Gateway API HTTPRoute. Attaches to the platform-installed Traefik Gateway
+# in the `traefik` namespace. Per-env values override `hostname`.
+httpRoute:
+  enabled: true
+  gatewayName: traefik-gateway
+  gatewayNamespace: traefik
+  gatewaySectionName: web
+  hostname: guestbook.local

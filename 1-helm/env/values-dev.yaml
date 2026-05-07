@@ -4,3 +4,6 @@ replicaCount: 1
 
 image:
   tag: "0.0.1"
+
+httpRoute:
+  hostname: guestbook-dev.local

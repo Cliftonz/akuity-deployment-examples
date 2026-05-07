@@ -86,7 +86,7 @@ The split matters because a chart-only release (which is most of them) does not 
 │   │   ├── claim-sync.yaml                  # API pipeline (git-files generator)
 │   │   └── business-apps.yaml               # App pipeline (list generator)
 │   ├── apps/                                 # platform Applications: argocd-config, admission-policies,
-│   │                                         # kube-prometheus-stack, loki, ingress-nginx, cert-manager,
+│   │                                         # kube-prometheus-stack, loki, Traefik, cert-manager,
 │   │                                         # kargo-pipelines
 │   ├── configmaps/                          # argocd-cm (Dex/OIDC), argocd-notifications-cm
 │   └── projects/{platform,business}.yaml
@@ -104,7 +104,7 @@ The split matters because a chart-only release (which is most of them) does not 
 ├── platform/
 │   ├── admission/                           # ValidatingAdmissionPolicy + Binding (Enforce)
 │   ├── kube-prometheus-stack/, loki/        # monitoring + logging
-│   ├── ingress-nginx/, cert-manager/
+│   ├── Traefik/, cert-manager/
 ├── akuity/                                   # Akuity org-level: audit-log-stream.yaml
 ├── tasks/, runbooks/                        # Akuity Intelligence (scheduled reports + playbooks)
 └── rendered/{dev,staging,prod}/             # Kargo writes hydrated YAML here per env branch

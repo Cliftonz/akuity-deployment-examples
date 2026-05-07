@@ -9,13 +9,13 @@ metadata:
   finalizers:
     - resources-finalizer.argocd.argoproj.io
 spec:
-  description: Cluster-wide component workloads (ingress, cert-manager, etc.)
+  description: Cluster-wide component workloads (Traefik, cert-manager, etc.)
   sourceRepos:
     - https://github.com/Cliftonz/akuity-deployment-examples
-    - https://kubernetes.github.io/ingress-nginx
+    - https://traefik.github.io/charts
     - https://charts.jetstack.io
   destinations:
-    - namespace: ingress-nginx
+    - namespace: traefik
       server: "*"
     - namespace: cert-manager
       server: "*"
@@ -29,8 +29,8 @@ spec:
       server: "*"
   # Used to be `*/*`. That meant any merged PR could ship a privileged
   # ClusterRoleBinding or a sneaky admission webhook through this project.
-  # The list below is the actual set ingress-nginx + cert-manager + Kargo
-  # need — nothing more. Anything new gets added explicitly.
+  # The list below is the actual set Traefik + cert-manager + Kargo need —
+  # nothing more. Anything new gets added explicitly.
   clusterResourceWhitelist:
     - group: ""
       kind: Namespace
@@ -54,6 +54,10 @@ spec:
       kind: Project
     - group: scheduling.k8s.io
       kind: PriorityClass
+    # Gateway API — Traefik ships GatewayClass cluster-scoped, plus the
+    # CRDs ride along when the chart provisions them.
+    - group: gateway.networking.k8s.io
+      kind: GatewayClass
   # Same idea for namespaced resources — enumerate the groups, don't blanket.
   namespaceResourceWhitelist:
     - group: ""
@@ -75,6 +79,12 @@ spec:
     - group: monitoring.coreos.com
       kind: "*"
     - group: kargo.akuity.io
+      kind: "*"
+    # Gateway API — Traefik creates a Gateway in its own namespace; the
+    # business charts ship HTTPRoute resources that attach to it.
+    - group: gateway.networking.k8s.io
+      kind: "*"
+    - group: traefik.io
       kind: "*"
   syncWindows:
     - kind: deny

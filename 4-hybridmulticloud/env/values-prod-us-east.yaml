@@ -11,3 +11,6 @@ database:
 # us-east lands on AWS via the regional seed's EnvironmentConfig.
 # The values file is identical in shape to other regions — the platform
 # layer below the chart routes to the right Composition.
+
+httpRoute:
+  hostname: guestbook-prod-us-east.example.com

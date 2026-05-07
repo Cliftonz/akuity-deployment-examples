@@ -129,6 +129,50 @@ The honest tradeoff: YugabyteDB is operationally heavier than managed Postgres. 
 
 This is also why the swap happens at tier 4 specifically. Tier 3 customers running multi-region Postgres-with-failover would have the wrong default. Tier 4 customers running per-region isolated databases would be working around a database limitation that doesn't need to exist.
 
+## The buying conversation
+
+```mermaid
+flowchart TB
+    subgraph TLD["Akuity TLD control plane (one)"]
+        ArgoT["Argo CD;<br/>fleet-wide single pane"]
+        KargoT["Kargo;<br/>per-region gates"]
+        AuditT["Audit Logs<br/>aggregated fleet-wide"]
+        IntelT["Akuity Intelligence;<br/>fleet incident triage"]
+    end
+
+    subgraph US["us-east"]
+        SeedUS["Seed + workers"]
+    end
+    subgraph EU["eu-west"]
+        SeedEU["Seed + workers"]
+    end
+    subgraph AP["ap-southeast"]
+        SeedAP["Seed + workers"]
+    end
+    subgraph Sea["fleet-at-sea"]
+        SeedSea["Seed + workers<br/>(intermittent backhaul)"]
+    end
+
+    TLD -->|agent| US
+    TLD -->|agent| EU
+    TLD -->|agent| AP
+    TLD -.->|"agent (store-and-forward)"| Sea
+
+    KargoT -. independent .-> US
+    KargoT -. independent .-> EU
+    KargoT -. independent .-> AP
+    KargoT -. independent .-> Sea
+
+    TLD --> Win1["One Argo CD,<br/>30+ clusters,<br/>multi-cloud + on-prem"]
+    TLD --> Win2["EU outage doesn't<br/>block APAC promotion"]
+    TLD --> Win3["Audit evidence survives<br/>partial outage and<br/>satellite-link gaps"]
+
+    style TLD fill:#e8f5e9
+    style Sea fill:#fff3e0
+```
+
+The pitch in one sentence: *at fleet-of-fleets scale, the GitOps control plane stops being a tool and becomes infrastructure — you cannot afford to operate it yourself.* The conversation here is rarely about features; it's about who is on the hook at 4am when one region's promotion gate misbehaves. Akuity owns that pager so the platform org doesn't have to staff it across three time zones.
+
 ## What this tier reveals about Akuity's positioning
 
 As the customer matures, Akuity's role narrows and deepens. Tier 1 Akuity does almost everything GitOps-shaped. Tier 4 Akuity is one of four or five carefully chosen layers, owning exactly the GitOps reconciliation and orchestration surface, no more and no less. Cluster lifecycle is owned by Cluster API or Kubermatic. Infra composition is owned by Crossplane on the regional seeds. Database multi-region replication is owned by YugabyteDB. Akuity owns the cross-region GitOps reconciliation surface.

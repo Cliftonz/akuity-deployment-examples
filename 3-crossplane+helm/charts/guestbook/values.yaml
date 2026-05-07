@@ -47,3 +47,12 @@ database:
   # Name of the Secret that the Terraform module creates in this namespace.
   # Per-env overlays override this.
   secretName: guestbook-postgres
+
+# Gateway API HTTPRoute. Attaches to the platform-installed Traefik Gateway
+# in the `traefik` namespace. Per-env values override `hostname`.
+httpRoute:
+  enabled: true
+  gatewayName: traefik-gateway
+  gatewayNamespace: traefik
+  gatewaySectionName: web
+  hostname: guestbook.local
