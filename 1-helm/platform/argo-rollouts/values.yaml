@@ -1,0 +1,28 @@
+# Argo Rollouts. Drives canary promotion for the guestbook chart.
+#
+# Why a plugin block: tier 1 ingress is Gateway API (Traefik), so traffic
+# splitting goes through the gatewayAPI plugin rather than ingress-nginx
+# annotations. The plugin binary is downloaded by the controller at start
+# from the URL below; the configMap key name (argoproj-labs/gatewayAPI) must
+# match what Rollouts referenced in `strategy.canary.trafficRouting.plugins`.
+controller:
+  replicas: 1
+  metrics:
+    enabled: true
+    serviceMonitor:
+      enabled: true
+      additionalLabels:
+        release: kps
+  trafficRouterPlugins:
+    trafficRouterPlugins: |-
+      - name: "argoproj-labs/gatewayAPI"
+        location: "https://github.com/argoproj-labs/rollouts-plugin-trafficrouter-gatewayapi/releases/download/v0.5.0/gatewayapi-plugin-linux-amd64"
+
+dashboard:
+  enabled: true
+  metrics:
+    enabled: true
+    serviceMonitor:
+      enabled: true
+      additionalLabels:
+        release: kps

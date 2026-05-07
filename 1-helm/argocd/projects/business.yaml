@@ -35,10 +35,22 @@ spec:
       kind: "*"
     - group: networking.k8s.io
       kind: "*"
+    - group: gateway.networking.k8s.io
+      kind: "*"
     - group: autoscaling
       kind: "*"
     - group: policy
       kind: "*"
+    # Argo Rollouts CRDs — Rollout, AnalysisTemplate, AnalysisRun. Used by
+    # the canary path on staging/prod. Kept narrow to argoproj.io kinds the
+    # business chart actually emits (no Application/AppProject — that
+    # belongs to the platform project).
+    - group: argoproj.io
+      kind: Rollout
+    - group: argoproj.io
+      kind: AnalysisTemplate
+    - group: argoproj.io
+      kind: AnalysisRun
   roles:
     - name: app-developer
       description: Product team developers

@@ -7,3 +7,15 @@ image:
 
 httpRoute:
   hostname: guestbook-prod.local
+
+# Canary at prod — slower ramp, longer pauses, manual approval gate sits
+# upstream in Kargo (no autoPromotion on prod stage).
+rollout:
+  enabled: true
+  steps:
+    - setWeight: 5
+    - pauseSeconds: 300
+    - setWeight: 25
+    - pauseSeconds: 300
+    - setWeight: 50
+    - pauseSeconds: 600

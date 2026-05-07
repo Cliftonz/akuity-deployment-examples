@@ -1,0 +1,31 @@
+{{- if and .Values.rollout.enabled .Values.rollout.analysis.enabled }}
+# AnalysisTemplate for the Rollout. Lives in the app namespace because
+# Rollouts resolves `templates[].templateName` against its own namespace
+# unless `clusterScope: true`. Same query shape as the kargo-simple
+# version — kept in sync deliberately so a Stage-level Kargo analysis and
+# the in-rollout analysis hit the same SLO threshold.
+apiVersion: argoproj.io/v1alpha1
+kind: AnalysisTemplate
+metadata:
+  name: {{ .Values.rollout.analysis.templateName }}
+  namespace: {{ .Values.namespace }}
+  labels:
+    {{- include "guestbook.labels" . | nindent 4 }}
+spec:
+  args:
+    - name: service-name
+    - name: service-namespace
+  metrics:
+    - name: error-rate
+      successCondition: result[0] < 0.02
+      failureLimit: 1
+      interval: 30s
+      count: 5
+      provider:
+        prometheus:
+          address: http://kps-prometheus.monitoring.svc.cluster.local:9090
+          query: |
+            sum(rate(http_requests_total{namespace="{{ "{{" }}args.service-namespace{{ "}}" }}",service="{{ "{{" }}args.service-name{{ "}}" }}",code=~"5.."}[5m]))
+            /
+            sum(rate(http_requests_total{namespace="{{ "{{" }}args.service-namespace{{ "}}" }}",service="{{ "{{" }}args.service-name{{ "}}" }}"}[5m]))
+{{- end }}

@@ -1,6 +1,15 @@
-{{- if not .Values.rollout.enabled }}
-apiVersion: apps/v1
-kind: Deployment
+{{- if .Values.rollout.enabled }}
+# Argo Rollout (replaces Deployment when rollout.enabled). Pod spec is
+# identical to deployment.yaml — only the wrapping kind + canary strategy
+# differ. The Gateway API plugin shifts HTTPRoute weight between the
+# `guestbook` (stable) and `guestbook-canary` Services per the steps below.
+#
+# `dynamicStableScale: true` keeps total replica count steady across the
+# rollout — at 25% canary weight, ~25% of pods serve canary, the rest serve
+# stable. Without it Rollouts scales canary to full replicaCount, doubling
+# pod budget mid-promotion.
+apiVersion: argoproj.io/v1alpha1
+kind: Rollout
 metadata:
   name: guestbook
   namespace: {{ .Values.namespace }}
@@ -12,6 +21,36 @@ spec:
   selector:
     matchLabels:
       app: guestbook
+  strategy:
+    canary:
+      canaryService: guestbook-canary
+      stableService: guestbook
+      dynamicStableScale: true
+      trafficRouting:
+        plugins:
+          argoproj-labs/gatewayAPI:
+            httpRoute: guestbook
+            namespace: {{ .Values.namespace }}
+      steps:
+        {{- range .Values.rollout.steps }}
+        {{- if hasKey . "setWeight" }}
+        - setWeight: {{ .setWeight }}
+        {{- else if hasKey . "pauseSeconds" }}
+        - pause: { duration: {{ .pauseSeconds }}s }
+        {{- end }}
+        {{- end }}
+      {{- if .Values.rollout.analysis.enabled }}
+      analysis:
+        startingStep: {{ .Values.rollout.analysis.startingStep }}
+        templates:
+          - templateName: {{ .Values.rollout.analysis.templateName }}
+            clusterScope: false
+        args:
+          - name: service-name
+            value: guestbook-canary
+          - name: service-namespace
+            value: {{ .Values.namespace }}
+      {{- end }}
   template:
     metadata:
       labels:

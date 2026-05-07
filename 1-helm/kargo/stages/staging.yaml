@@ -11,10 +11,18 @@ spec:
       sources:
         stages:
           - dev
-  # Same probe shape as dev. Freight only moves on if this comes back green.
+  # Two-layer verification once canary lands:
+  #   1. argocd-update step blocks until Argo CD reports the app Healthy —
+  #      Rollouts' health check only flips Healthy after the canary fully
+  #      promotes (every weight step + in-rollout AnalysisRun passes).
+  #      So a failed canary fails the promotion before this block runs.
+  #   2. This `verification` block then runs post-promote SLO checks on
+  #      the (now-stable) Service. Failure here doesn't roll back, but
+  #      pins freight in this Stage — prod won't pull it forward.
   verification:
     analysisTemplates:
       - name: guestbook-http-probe
+      - name: error-rate-prometheus
     args:
       - name: service-name
         value: guestbook

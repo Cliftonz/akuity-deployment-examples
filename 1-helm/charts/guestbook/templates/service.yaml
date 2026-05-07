@@ -12,3 +12,24 @@ spec:
     - name: http
       port: {{ .Values.service.port }}
       targetPort: {{ .Values.service.targetPort }}
+{{- if .Values.rollout.enabled }}
+---
+# Canary Service. Rollouts injects `rollouts-pod-template-hash` into both
+# this and the stable Service at runtime to pin each one to the right
+# ReplicaSet — start with the bare `app: guestbook` selector and let the
+# controller mutate.
+apiVersion: v1
+kind: Service
+metadata:
+  name: guestbook-canary
+  namespace: {{ .Values.namespace }}
+  labels:
+    {{- include "guestbook.labels" . | nindent 4 }}
+spec:
+  selector:
+    app: guestbook
+  ports:
+    - name: http
+      port: {{ .Values.service.port }}
+      targetPort: {{ .Values.service.targetPort }}
+{{- end }}

@@ -47,6 +47,25 @@ spec:
       destination:
         name: in-cluster
         namespace: '{{ .app }}-{{ .env }}'
+      # Argo Rollouts owns three fields the controller mutates mid-canary:
+      # HTTPRoute backendRef weights, Service.spec.selector (it injects
+      # rollouts-pod-template-hash), and Rollout.spec.replicas (paused
+      # promotions can scale canary independently). Without ignoreDifferences
+      # selfHeal would revert these every reconcile and stall the rollout.
+      ignoreDifferences:
+        - group: gateway.networking.k8s.io
+          kind: HTTPRoute
+          jsonPointers:
+            - /spec/rules/0/backendRefs/0/weight
+            - /spec/rules/0/backendRefs/1/weight
+        - group: ""
+          kind: Service
+          jsonPointers:
+            - /spec/selector
+        - group: argoproj.io
+          kind: Rollout
+          jsonPointers:
+            - /spec/replicas
       syncPolicy:
         automated:
           prune: true

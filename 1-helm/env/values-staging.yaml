@@ -7,3 +7,7 @@ image:
 
 httpRoute:
   hostname: guestbook-staging.local
+
+# Canary at staging — quick validation cycle, three weight bumps.
+rollout:
+  enabled: true

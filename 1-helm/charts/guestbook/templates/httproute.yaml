@@ -21,4 +21,17 @@ spec:
       backendRefs:
         - name: guestbook
           port: {{ .Values.service.port }}
+          {{- if .Values.rollout.enabled }}
+          weight: 100
+          {{- end }}
+        {{- if .Values.rollout.enabled }}
+        # Canary backendRef. Rollouts plugin owns these two `weight` values
+        # at runtime — git always shows stable=100 / canary=0 (the desired
+        # post-rollout resting state). Argo CD treats live weight drift as
+        # benign because the Rollouts controller is the field manager;
+        # ServerSideApply preserves that ownership.
+        - name: guestbook-canary
+          port: {{ .Values.service.port }}
+          weight: 0
+        {{- end }}
 {{- end }}

@@ -14,9 +14,16 @@ spec:
       sources:
         stages:
           - staging
+  # Post-promote verification, same two-layer model as staging. Argo CD
+  # already blocked until the prod canary fully promoted (slower steps,
+  # 5–10min pauses); this block adds a final SLO gate on the stable
+  # Service. Failure pins freight here — there's no further stage anyway,
+  # so the practical effect is an alert + a PagerDuty page via the
+  # notifications.argoproj.io subscriptions on the Application.
   verification:
     analysisTemplates:
       - name: guestbook-http-probe
+      - name: error-rate-prometheus
     args:
       - name: service-name
         value: guestbook

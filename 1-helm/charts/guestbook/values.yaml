@@ -46,3 +46,29 @@ httpRoute:
   gatewayNamespace: traefik
   gatewaySectionName: web
   hostname: guestbook.local
+
+# Progressive delivery via Argo Rollouts. When `enabled: true` the chart
+# emits a Rollout (instead of Deployment) plus a `<name>-canary` Service.
+# The HTTPRoute gets a second backendRef pointing at the canary Service,
+# initial weight 0; the Gateway API plugin shifts weight per `steps`.
+#
+# `analysis.template` runs mid-rollout against in-cluster Prometheus —
+# kube-prometheus-stack ships at tier 1, so the AnalysisTemplate
+# `error-rate-prometheus` (in kargo-simple ns) is already in place.
+# Default off — dev keeps RollingUpdate for fast feedback. Per-env values
+# flip this on for staging/prod.
+rollout:
+  enabled: false
+  steps:
+    - setWeight: 10
+    - pauseSeconds: 60
+    - setWeight: 25
+    - pauseSeconds: 60
+    - setWeight: 50
+    - pauseSeconds: 60
+  analysis:
+    enabled: true
+    templateName: error-rate-prometheus
+    templateNamespace: kargo-simple
+    # Run analysis after the first weight bump and every step thereafter.
+    startingStep: 2

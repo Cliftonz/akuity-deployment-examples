@@ -14,4 +14,5 @@ resources:
   - apps/argocd-config.yaml          # syncs configmaps/ — Dex + Notifications
   - apps/traefik.yaml
   - apps/cert-manager.yaml
+  - apps/argo-rollouts.yaml          # progressive delivery (canary via Gateway API)
   - apps/kargo-pipelines.yaml

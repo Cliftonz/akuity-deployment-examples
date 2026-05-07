@@ -1,0 +1,88 @@
+# Argo Rollouts. Powers progressive delivery (canary / blue-green) for the
+# business charts. Tier 1 wires the Gateway API plugin so HTTPRoute weights
+# get split between stable and canary services without an ingress swap.
+#
+# Two Applications: one for the chart install, one for the gateway-api RBAC
+# add-on (the bundled ClusterRole doesn't cover gateway.networking.k8s.io).
+# selfHeal off — same logic as traefik/cert-manager: rollout controller
+# outages want a human in the loop.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: argo-rollouts
+  namespace: argocd
+  annotations:
+    notifications.argoproj.io/subscribe.on-sync-failed.slack: <slack-channel>
+    notifications.argoproj.io/subscribe.on-health-degraded.slack: <slack-channel>
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: platform
+  sources:
+    - repoURL: https://github.com/Cliftonz/akuity-deployment-examples
+      targetRevision: HEAD
+      path: 1-helm/platform/argo-rollouts
+      directory:
+        include: namespace.yaml
+    - repoURL: https://argoproj.github.io/argo-helm
+      chart: argo-rollouts
+      targetRevision: 2.40.4
+      helm:
+        releaseName: argo-rollouts
+        valueFiles:
+          - $values/platform/argo-rollouts/values.yaml
+    - repoURL: https://github.com/Cliftonz/akuity-deployment-examples
+      targetRevision: HEAD
+      ref: values
+  destination:
+    name: in-cluster
+    namespace: argo-rollouts
+  syncPolicy:
+    automated:
+      prune: false
+      selfHeal: false
+    retry:
+      limit: 5
+      backoff:
+        duration: 30s
+        factor: 2
+        maxDuration: 5m
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true
+---
+# Gateway API plugin RBAC ships separately — depends on Rollouts CRDs +
+# ServiceAccount existing first, hence sync-wave 10 like cert-manager-issuers.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: argo-rollouts-gateway-api
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "10"
+    notifications.argoproj.io/subscribe.on-sync-failed.slack: <slack-channel>
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: platform
+  source:
+    repoURL: https://github.com/Cliftonz/akuity-deployment-examples
+    targetRevision: HEAD
+    path: 1-helm/platform/argo-rollouts
+    directory:
+      include: gateway-api-rbac.yaml
+  destination:
+    name: in-cluster
+    namespace: argo-rollouts
+  syncPolicy:
+    automated:
+      prune: false
+      selfHeal: false
+    retry:
+      limit: 5
+      backoff:
+        duration: 30s
+        factor: 2
+        maxDuration: 5m
+    syncOptions:
+      - ServerSideApply=true
