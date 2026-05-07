@@ -4,8 +4,6 @@ kind: HTTPRoute
 metadata:
   name: guestbook
   namespace: {{ .Values.namespace }}
-  labels:
-    {{- include "guestbook.labels" . | nindent 4 }}
 spec:
   parentRefs:
     - name: {{ .Values.httpRoute.gatewayName }}
@@ -14,11 +12,7 @@ spec:
   hostnames:
     - {{ .Values.httpRoute.hostname | quote }}
   rules:
-    - matches:
-        - path:
-            type: PathPrefix
-            value: /
-      backendRefs:
+    - backendRefs:
         - name: guestbook
-          port: {{ .Values.service.port }}
+          port: 80
 {{- end }}

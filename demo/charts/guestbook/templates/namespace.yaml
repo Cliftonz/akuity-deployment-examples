@@ -4,10 +4,5 @@ metadata:
   name: {{ .Values.namespace }}
   labels:
     {{- include "guestbook.labels" . | nindent 4 }}
-    kubernetes.io/metadata.name: {{ .Values.namespace }}
-    # Lets the Traefik Gateway attach an HTTPRoute from this namespace via
-    # allowedRoutes.namespaces.from: Selector. Same wiring tier 1 uses.
+    # Required for the Traefik Gateway to allow HTTPRoutes from this ns.
     routes-from: business
-    pod-security.kubernetes.io/enforce: {{ .Values.podSecurityAdmission.enforce }}
-    pod-security.kubernetes.io/audit: {{ .Values.podSecurityAdmission.audit }}
-    pod-security.kubernetes.io/warn: {{ .Values.podSecurityAdmission.warn }}

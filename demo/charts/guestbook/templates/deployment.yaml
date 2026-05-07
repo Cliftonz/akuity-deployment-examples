@@ -7,7 +7,6 @@ metadata:
     {{- include "guestbook.labels" . | nindent 4 }}
 spec:
   replicas: {{ .Values.replicaCount }}
-  revisionHistoryLimit: {{ .Values.revisionHistoryLimit }}
   selector:
     matchLabels:
       app: guestbook
@@ -15,45 +14,22 @@ spec:
     metadata:
       labels:
         app: guestbook
-        {{- include "guestbook.labels" . | nindent 8 }}
     spec:
-      serviceAccountName: guestbook
-      automountServiceAccountToken: false
       containers:
         - name: guestbook
-          image: {{ include "guestbook.image" . }}
+          image: {{ .Values.image.repository }}:{{ .Values.image.tag }}
           ports:
             - name: http
-              containerPort: {{ .Values.container.port }}
+              containerPort: 3000
           readinessProbe:
-            httpGet:
-              path: /healthz
-              port: http
-            initialDelaySeconds: 5
-            periodSeconds: 10
-            timeoutSeconds: 2
-            failureThreshold: 3
-          livenessProbe:
-            httpGet:
-              path: /healthz
-              port: http
-            initialDelaySeconds: 30
-            periodSeconds: 30
-            timeoutSeconds: 2
-            failureThreshold: 3
-          resources:
-            {{- toYaml .Values.container.resources | nindent 12 }}
+            httpGet: { path: /healthz, port: http }
+          # Minimum needed for PSA `restricted`. Most clusters enforce it
+          # by default; harmless if yours doesn't.
           securityContext:
             allowPrivilegeEscalation: false
-            readOnlyRootFilesystem: true
             runAsNonRoot: true
             runAsUser: 10001
             capabilities:
               drop: ["ALL"]
             seccompProfile:
               type: RuntimeDefault
-      securityContext:
-        runAsNonRoot: true
-        runAsUser: 10001
-        seccompProfile:
-          type: RuntimeDefault

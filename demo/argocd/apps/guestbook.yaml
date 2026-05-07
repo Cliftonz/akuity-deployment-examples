@@ -1,33 +1,16 @@
-# Demo Application. Renders the chart in `demo/charts/guestbook` directly
-# from main on every sync — no Kargo, no env branches, no rendered-manifests
-# pattern. The full GitOps loop in one Application.
-#
-# Multi-source layout matches platform apps in tier 1 (cert-manager, traefik):
-# the chart and its values come from the same repo, but separated so a
-# values-only PR doesn't force a chart re-resolve.
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
   name: guestbook-demo
   namespace: argocd
-  annotations:
-    notifications.argoproj.io/subscribe.on-sync-failed.slack: <slack-channel>
-    notifications.argoproj.io/subscribe.on-health-degraded.slack: <slack-channel>
-  finalizers:
-    - resources-finalizer.argocd.argoproj.io
 spec:
   project: demo
-  sources:
-    - repoURL: https://github.com/Cliftonz/akuity-deployment-examples
-      targetRevision: HEAD
-      path: demo/charts/guestbook
-      helm:
-        releaseName: guestbook
-        valueFiles:
-          - $values/demo/charts/guestbook/values.yaml
-    - repoURL: https://github.com/Cliftonz/akuity-deployment-examples
-      targetRevision: HEAD
-      ref: values
+  source:
+    repoURL: https://github.com/Cliftonz/akuity-deployment-examples
+    targetRevision: HEAD
+    path: demo/charts/guestbook
+    helm:
+      releaseName: guestbook
   destination:
     name: demo
     namespace: guestbook-demo
@@ -35,12 +18,6 @@ spec:
     automated:
       prune: true
       selfHeal: true
-    retry:
-      limit: 5
-      backoff:
-        duration: 30s
-        factor: 2
-        maxDuration: 5m
     syncOptions:
       - CreateNamespace=true
       - ServerSideApply=true
