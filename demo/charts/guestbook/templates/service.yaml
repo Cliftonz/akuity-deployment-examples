@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: guestbook
+  namespace: {{ .Values.namespace }}
+  labels:
+    {{- include "guestbook.labels" . | nindent 4 }}
+spec:
+  selector:
+    app: guestbook
+  ports:
+    - name: http
+      port: {{ .Values.service.port }}
+      targetPort: {{ .Values.service.targetPort }}

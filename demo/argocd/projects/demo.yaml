@@ -1,0 +1,33 @@
+# Demo AppProject. Self-contained — does not borrow from tier 1's
+# `business` or `platform` projects. Single namespace, single cluster,
+# minimum surface area. Drop-in for a fresh Akuity instance that wants
+# to validate plumbing without standing up Kargo or progressive delivery.
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: demo
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  description: Demo workloads. One namespace, one chart, one cluster.
+  sourceRepos:
+    - https://github.com/Cliftonz/akuity-deployment-examples
+  destinations:
+    - namespace: guestbook-demo
+      server: "*"
+  # Namespace is the only cluster-scoped resource the chart emits.
+  clusterResourceWhitelist:
+    - group: ""
+      kind: Namespace
+  namespaceResourceWhitelist:
+    - group: ""
+      kind: "*"
+    - group: apps
+      kind: "*"
+    - group: networking.k8s.io
+      kind: "*"
+    - group: gateway.networking.k8s.io
+      kind: "*"
+    - group: policy
+      kind: "*"

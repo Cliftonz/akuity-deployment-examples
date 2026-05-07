@@ -1,0 +1,44 @@
+# Default values for the demo guestbook chart. Single-environment shape.
+# No rollout, no canary, no Kargo. Argo CD renders this chart on every
+# sync against the live cluster.
+
+namespace: guestbook-demo
+
+image:
+  repository: gcr.io/google-samples/hello-app
+  tag: "0.0.1"
+
+replicaCount: 1
+revisionHistoryLimit: 3
+
+pdb:
+  minAvailable: 1
+
+service:
+  port: 80
+  targetPort: http
+
+container:
+  port: 3000
+  resources:
+    requests:
+      cpu: 50m
+      memory: 64Mi
+    limits:
+      cpu: 200m
+      memory: 256Mi
+
+podSecurityAdmission:
+  enforce: restricted
+  audit: restricted
+  warn: restricted
+
+# Gateway API HTTPRoute. Attaches to the platform-installed Traefik Gateway.
+# Set `enabled: false` if the cluster has no Gateway API and you want a
+# Service-only deploy.
+httpRoute:
+  enabled: true
+  gatewayName: traefik-gateway
+  gatewayNamespace: traefik
+  gatewaySectionName: web
+  hostname: guestbook-demo.local
