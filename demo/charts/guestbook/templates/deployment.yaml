@@ -20,7 +20,7 @@ spec:
           image: {{ include "guestbook.image" . }}
           ports:
             - name: http
-              containerPort: 3000
+              containerPort: 8080
           readinessProbe:
             httpGet: { path: /healthz, port: http }
           # Minimum needed for PSA `restricted`. Most clusters enforce it
