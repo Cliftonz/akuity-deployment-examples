@@ -43,7 +43,7 @@ spec:
           config:
             path: ./src/demo/env/values-${{ vars.env }}.yaml
             updates:
-              - key: image.digest
+              - key: /image/digest
                 value: ${{ imageFrom(vars.imageRepo).Digest }}
         - uses: helm-template
           config:
