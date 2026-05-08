@@ -27,7 +27,7 @@ service:
   targetPort: http
 
 container:
-  port: 3000
+  port: 8080
   resources:
     requests:
       cpu: 50m
