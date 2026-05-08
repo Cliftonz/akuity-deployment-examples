@@ -47,6 +47,7 @@ spec:
                 value: ${{ imageFrom(vars.imageRepo).Digest }}
         - uses: helm-template
           config:
+            releaseName: guestbook
             path: ./src/demo/charts/guestbook
             valuesFiles:
               - ./src/demo/env/values-${{ vars.env }}.yaml
