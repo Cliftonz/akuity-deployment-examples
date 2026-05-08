@@ -2,5 +2,10 @@ namespace: guestbook-demo-dev
 
 replicaCount: 1
 
+# Kargo's yaml-update step rewrites image.digest at promotion time.
+# The key has to exist for yaml-update to mutate it; empty string is fine.
+image:
+  digest: ""
+
 httpRoute:
   hostname: guestbook-demo-dev.local

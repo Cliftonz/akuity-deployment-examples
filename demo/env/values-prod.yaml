@@ -2,5 +2,8 @@ namespace: guestbook-demo-prod
 
 replicaCount: 3
 
+image:
+  digest: ""
+
 httpRoute:
   hostname: guestbook-demo-prod.local

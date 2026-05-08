@@ -4,6 +4,7 @@ replicaCount: 2
 
 image:
   tag: "1.0"
+  digest: ""
 
 httpRoute:
   hostname: guestbook-staging.local

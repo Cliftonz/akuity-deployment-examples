@@ -4,6 +4,7 @@ replicaCount: 3
 
 image:
   tag: "1.0"
+  digest: ""
 
 httpRoute:
   hostname: guestbook-prod.local
