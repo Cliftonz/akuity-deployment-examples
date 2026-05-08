@@ -43,10 +43,10 @@ spec:
     spec:
       containers:
         - name: guestbook
-          image: gcr.io/google-samples/hello-app@sha256:d9d5ec862abaad2ef6c14f5cdd05915c8929508c0fff41a970abc7eea43e3874
+          image: gcr.io/google-samples/hello-app@sha256:4986715dd1557cdf7f618ac50c723964ecabfb32178fcbb763a1e6fd6ac5b405
           ports:
             - name: http
-              containerPort: 3000
+              containerPort: 8080
           readinessProbe:
             httpGet: { path: /healthz, port: http }
           # Minimum needed for PSA `restricted`. Most clusters enforce it
