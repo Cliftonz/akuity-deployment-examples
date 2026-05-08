@@ -1,0 +1,91 @@
+---
+# Source: guestbook/templates/namespace.yaml
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: guestbook-demo-staging
+  labels:
+    app.kubernetes.io/name: guestbook
+    # Required for the Traefik Gateway to allow HTTPRoutes from this ns.
+    routes-from: business
+---
+# Source: guestbook/templates/service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: guestbook
+  namespace: guestbook-demo-staging
+spec:
+  selector:
+    app: guestbook
+  ports:
+    - name: http
+      port: 80
+      targetPort: http
+---
+# Source: guestbook/templates/deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: guestbook
+  namespace: guestbook-demo-staging
+  labels:
+    app.kubernetes.io/name: guestbook
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: guestbook
+  template:
+    metadata:
+      labels:
+        app: guestbook
+    spec:
+      containers:
+        - name: guestbook
+          image: gcr.io/google-samples/hello-app@sha256:4986715dd1557cdf7f618ac50c723964ecabfb32178fcbb763a1e6fd6ac5b405
+          ports:
+            - name: http
+              containerPort: 8080
+          readinessProbe:
+            httpGet: { path: /healthz, port: http }
+          # Minimum needed for PSA `restricted`. Most clusters enforce it
+          # by default; harmless if yours doesn't.
+          securityContext:
+            allowPrivilegeEscalation: false
+            runAsNonRoot: true
+            runAsUser: 10001
+            capabilities:
+              drop: ["ALL"]
+            seccompProfile:
+              type: RuntimeDefault
+---
+# Source: guestbook/templates/httproute.yaml
+# HTTPRoute. Fields below explicitly set Gateway API defaults that the
+# API server otherwise injects on admission — without them, every reconcile
+# sees the live object as drifted vs the rendered manifest.
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: guestbook
+  namespace: guestbook-demo-staging
+spec:
+  parentRefs:
+    - group: gateway.networking.k8s.io
+      kind: Gateway
+      name: traefik-gateway
+      namespace: traefik
+      sectionName: web
+  hostnames:
+    - "guestbook-demo-staging.local"
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /
+      backendRefs:
+        - group: ""
+          kind: Service
+          name: guestbook
+          port: 80
+          weight: 1
