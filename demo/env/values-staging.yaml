@@ -1,0 +1,6 @@
+namespace: guestbook-demo-staging
+
+replicaCount: 2
+
+httpRoute:
+  hostname: guestbook-demo-staging.local

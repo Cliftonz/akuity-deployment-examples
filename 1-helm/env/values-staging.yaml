@@ -3,7 +3,7 @@ namespace: guestbook-staging
 replicaCount: 2
 
 image:
-  tag: "0.0.1"
+  tag: "1.0"
 
 httpRoute:
   hostname: guestbook-staging.local

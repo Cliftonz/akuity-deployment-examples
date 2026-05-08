@@ -6,9 +6,10 @@ namespace: guestbook
 
 image:
   repository: gcr.io/google-samples/hello-app
-  tag: "0.0.1"
-  # Kargo replaces this with a digest at promotion time. When set,
-  # takes precedence over .tag. Leave empty in defaults.
+  # Public registry only publishes 1.0 and 2.0 — pick a real tag so the
+  # chart works pre-Kargo. Kargo's first promotion overwrites .digest
+  # which then takes precedence.
+  tag: "1.0"
   digest: ""
 
 replicaCount: 1

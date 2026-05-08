@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
         - name: guestbook
-          image: {{ .Values.image.repository }}:{{ .Values.image.tag }}
+          image: {{ include "guestbook.image" . }}
           ports:
             - name: http
               containerPort: 3000

@@ -40,13 +40,15 @@ spec:
               - branch: env/${{ vars.env }}
                 create: true
                 path: ./out
-        - uses: helm-update-image
+        # yaml-update is broader-compat than helm-update-image. Akuity's
+        # hosted Kargo doesn't always carry the helm-update-image runner;
+        # yaml-update is in the base set.
+        - uses: yaml-update
           as: update-image
           config:
             path: ./src/1-helm/env/values-${{ vars.env }}.yaml
-            images:
-              - image: ${{ vars.imageRepo }}
-                key: image.digest
+            updates:
+              - key: image.digest
                 value: ${{ imageFrom(vars.imageRepo).Digest }}
         - uses: helm-template
           config:
@@ -62,7 +64,7 @@ spec:
           as: commit
           config:
             path: ./out
-            message: ${{ outputs['update-image'].commitMessage }}
+            message: 'chore(${{ vars.env }}): bump guestbook image to ${{ imageFrom(vars.imageRepo).Tag }}'
         - uses: git-push
           config:
             path: ./out

@@ -1,0 +1,37 @@
+# App-of-apps for the demo Kargo control plane. Argo CD reconciles the
+# Project, ProjectConfig, Warehouse, AnalysisTemplate, and Stages from
+# demo/kargo/, so changing the promotion model is a regular GitOps PR.
+#
+# `prune: false` is deliberate — these CRs are stateful. A transient
+# render error producing empty output would otherwise prune live Stages
+# and take freight history with them.
+#
+# Optional: skip this Application entirely if you'd rather paste the
+# Kargo CRs directly into the Akuity Kargo UI instead of letting Argo
+# CD reconcile them.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: kargo-pipelines-demo
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "-5"
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: demo
+  source:
+    repoURL: https://github.com/Cliftonz/akuity-deployment-examples
+    targetRevision: HEAD
+    path: demo/kargo
+  destination:
+    name: in-cluster
+    namespace: kargo-demo
+  syncPolicy:
+    automated:
+      prune: false
+      selfHeal: false
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true
+      - PruneLast=true

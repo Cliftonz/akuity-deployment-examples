@@ -3,7 +3,7 @@ namespace: guestbook-prod
 replicaCount: 3
 
 image:
-  tag: "0.0.1"
+  tag: "1.0"
 
 httpRoute:
   hostname: guestbook-prod.local

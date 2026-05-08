@@ -1,0 +1,57 @@
+# Traefik values for the local kind cluster. Differs from the tier 1
+# platform values: NodePort instead of LoadBalancer (kind has no LB), and
+# fixed nodePorts that match the extraPortMappings in cluster.yaml.
+
+deployment:
+  replicas: 1
+
+# Gateway API is the integration surface. The demo chart's HTTPRoute
+# attaches to `traefik-gateway` in this namespace.
+providers:
+  kubernetesGateway:
+    enabled: true
+  kubernetesIngress:
+    enabled: false   # demo only uses Gateway API, no classic Ingress
+
+gateway:
+  enabled: true
+  name: traefik-gateway
+  namespace: traefik
+  listeners:
+    web:
+      port: 8000
+      protocol: HTTP
+      namespacePolicy:
+        from: Selector
+        selector:
+          matchLabels:
+            routes-from: business
+
+# NodePort on fixed ports — must match cluster.yaml extraPortMappings.
+# Gives http://localhost / https://localhost on the host.
+service:
+  type: NodePort
+  spec:
+    externalTrafficPolicy: Local
+
+ports:
+  web:
+    nodePort: 30080
+  websecure:
+    nodePort: 30443
+
+resources:
+  requests:
+    cpu: 50m
+    memory: 64Mi
+  limits:
+    cpu: 200m
+    memory: 256Mi
+
+# No PDB — single replica.
+podDisruptionBudget:
+  enabled: false
+
+ingressRoute:
+  dashboard:
+    enabled: false

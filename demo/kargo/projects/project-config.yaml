@@ -1,0 +1,11 @@
+# Auto-promotion policy. Only dev auto-promotes from the Warehouse;
+# staging and prod default to manual (human clicks promote in the UI).
+apiVersion: kargo.akuity.io/v1alpha1
+kind: ProjectConfig
+metadata:
+  name: kargo-demo
+  namespace: kargo-demo
+spec:
+  promotionPolicies:
+    - stage: dev
+      autoPromotionEnabled: true

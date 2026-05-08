@@ -7,11 +7,21 @@ spec:
   sourceRepos:
     - https://github.com/Cliftonz/akuity-deployment-examples
   destinations:
-    - namespace: guestbook-demo
+    - namespace: guestbook-demo-dev
+      server: "*"
+    - namespace: guestbook-demo-staging
+      server: "*"
+    - namespace: guestbook-demo-prod
+      server: "*"
+    # kargo-demo holds the Kargo control-plane CRs (Project, Stages,
+    # Warehouse, AnalysisTemplate). Only the kargo-pipelines App writes here.
+    - namespace: kargo-demo
       server: "*"
   clusterResourceWhitelist:
     - group: ""
       kind: Namespace
+    - group: kargo.akuity.io
+      kind: Project
   namespaceResourceWhitelist:
     - group: ""
       kind: "*"
@@ -19,3 +29,7 @@ spec:
       kind: "*"
     - group: gateway.networking.k8s.io
       kind: "*"
+    - group: kargo.akuity.io
+      kind: "*"
+    - group: argoproj.io
+      kind: AnalysisTemplate

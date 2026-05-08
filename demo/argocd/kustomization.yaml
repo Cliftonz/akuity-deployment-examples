@@ -1,10 +1,11 @@
-# Bootstrap entrypoint for the demo tier. `kubectl apply -k demo/argocd/`
-# lands the AppProject and the single Application; Argo CD takes over from
-# there. No platform components, no Kargo, no progressive delivery — this
-# is the simplest end-to-end shape that still uses Helm + Argo CD.
+# Bootstrap entrypoint. `kubectl apply -k demo/argocd/` lands the
+# AppProject, the ApplicationSet (which fans out to dev/staging/prod
+# Applications), and the kargo-pipelines App that reconciles the Kargo
+# control plane from demo/kargo/.
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 
 resources:
   - projects/demo.yaml
-  - apps/guestbook.yaml
+  - applicationsets/guestbook.yaml
+  - apps/kargo-pipelines.yaml

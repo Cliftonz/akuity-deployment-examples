@@ -1,0 +1,6 @@
+namespace: guestbook-demo-dev
+
+replicaCount: 1
+
+httpRoute:
+  hostname: guestbook-demo-dev.local

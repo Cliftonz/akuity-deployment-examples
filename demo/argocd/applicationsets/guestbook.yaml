@@ -1,0 +1,43 @@
+# Generates one Application per env (dev, staging, prod). Each Application
+# reads the rendered manifest off the matching env/<env> branch — Kargo
+# writes there at promotion time. Argo CD applies plain YAML; the chart
+# is never re-rendered at sync.
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: guestbook-demo
+  namespace: argocd
+spec:
+  goTemplate: true
+  goTemplateOptions: ["missingkey=error"]
+  generators:
+    - list:
+        elements:
+          - env: dev
+          - env: staging
+          - env: prod
+  template:
+    metadata:
+      name: 'guestbook-demo-{{ .env }}'
+      annotations:
+        # Lets Kargo's argocd-update step act on this app.
+        kargo.akuity.io/authorized-stage: 'kargo-demo:{{ .env }}'
+    spec:
+      project: demo
+      source:
+        repoURL: https://github.com/Cliftonz/akuity-deployment-examples
+        targetRevision: 'env/{{ .env }}'
+        path: 'demo/rendered/{{ .env }}'
+        directory:
+          recurse: false
+          include: 'manifests.yaml'
+      destination:
+        name: demo
+        namespace: 'guestbook-demo-{{ .env }}'
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
+        syncOptions:
+          - CreateNamespace=true
+          - ServerSideApply=true

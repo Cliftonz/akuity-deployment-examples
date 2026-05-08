@@ -1,0 +1,35 @@
+# Verification probe each Stage runs after a promotion. If this doesn't
+# come back green, freight stays put and downstream Stages don't see it.
+apiVersion: argoproj.io/v1alpha1
+kind: AnalysisTemplate
+metadata:
+  name: guestbook-http-probe
+  namespace: kargo-demo
+spec:
+  args:
+    - name: service-name
+    - name: service-namespace
+  metrics:
+    - name: http-2xx
+      count: 5
+      interval: 15s
+      successCondition: result == "200"
+      failureLimit: 1
+      provider:
+        job:
+          spec:
+            backoffLimit: 0
+            template:
+              spec:
+                restartPolicy: Never
+                containers:
+                  - name: probe
+                    image: curlimages/curl:8.10.1
+                    command:
+                      - sh
+                      - -c
+                      - |
+                        set -e
+                        curl --silent --show-error --output /dev/null \
+                          --write-out '%{http_code}' --max-time 5 --retry 0 \
+                          "http://{{args.service-name}}.{{args.service-namespace}}.svc.cluster.local/healthz"
