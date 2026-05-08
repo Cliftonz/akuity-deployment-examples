@@ -4,7 +4,9 @@ replicaCount: 1
 
 image:
   tag: "1.0"
-  digest: ""
+
+# Flat top-level key — yaml-update doesn't traverse nested maps.
+imageDigest: ""
 
 httpRoute:
   hostname: guestbook-dev.local
