@@ -1,4 +1,7 @@
 {{- if .Values.httpRoute.enabled }}
+# HTTPRoute. Fields below explicitly set Gateway API defaults that the
+# API server otherwise injects on admission — without them, every reconcile
+# sees the live object as drifted vs the rendered manifest.
 apiVersion: gateway.networking.k8s.io/v1
 kind: HTTPRoute
 metadata:
@@ -6,13 +9,22 @@ metadata:
   namespace: {{ .Values.namespace }}
 spec:
   parentRefs:
-    - name: {{ .Values.httpRoute.gatewayName }}
+    - group: gateway.networking.k8s.io
+      kind: Gateway
+      name: {{ .Values.httpRoute.gatewayName }}
       namespace: {{ .Values.httpRoute.gatewayNamespace }}
       sectionName: {{ .Values.httpRoute.gatewaySectionName }}
   hostnames:
     - {{ .Values.httpRoute.hostname | quote }}
   rules:
-    - backendRefs:
-        - name: guestbook
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /
+      backendRefs:
+        - group: ""
+          kind: Service
+          name: guestbook
           port: 80
+          weight: 1
 {{- end }}
