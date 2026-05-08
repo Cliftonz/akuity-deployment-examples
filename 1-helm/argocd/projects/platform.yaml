@@ -14,6 +14,8 @@ spec:
     - https://github.com/Cliftonz/akuity-deployment-examples
     - https://traefik.github.io/charts
     - https://charts.jetstack.io
+    - https://argoproj.github.io/argo-helm
+    - https://prometheus-community.github.io/helm-charts
   destinations:
     - namespace: traefik
       server: "*"
@@ -26,6 +28,10 @@ spec:
     - namespace: kargo-simple
       server: "*"
     - namespace: argocd
+      server: "*"
+    - namespace: argo-rollouts
+      server: "*"
+    - namespace: monitoring
       server: "*"
   # Used to be `*/*`. That meant any merged PR could ship a privileged
   # ClusterRoleBinding or a sneaky admission webhook through this project.

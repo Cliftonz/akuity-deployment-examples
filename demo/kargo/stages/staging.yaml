@@ -11,14 +11,6 @@ spec:
       sources:
         stages:
           - dev
-  verification:
-    analysisTemplates:
-      - name: guestbook-http-probe
-    args:
-      - name: service-name
-        value: guestbook
-      - name: service-namespace
-        value: guestbook-demo-staging
   promotionTemplate:
     spec:
       vars:

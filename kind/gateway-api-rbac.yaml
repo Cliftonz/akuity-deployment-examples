@@ -1,0 +1,37 @@
+# Grants the Akuity agent / Argo CD service account read access to
+# Gateway API resources on the workload cluster. Kargo introspects the
+# Argo CD Application's resource tree to determine Stage health; without
+# this, HTTPRoutes raise "not authorized" errors mid-promotion.
+#
+# Replace <SA-NAMESPACE> and <SA-NAME> below with the SA Kargo is using
+# (find it via `kubectl logs -n akuity` or check the Akuity agent
+# install manifest).
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: gateway-api-read
+rules:
+  - apiGroups: ["gateway.networking.k8s.io"]
+    resources:
+      - httproutes
+      - gateways
+      - gatewayclasses
+      - tcproutes
+      - tlsroutes
+      - udproutes
+      - grpcroutes
+      - referencegrants
+    verbs: ["get", "list", "watch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: gateway-api-read-akuity-agent
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: gateway-api-read
+subjects:
+  - kind: ServiceAccount
+    name: <SA-NAME>           # e.g. akuity-agent
+    namespace: <SA-NAMESPACE> # e.g. akuity

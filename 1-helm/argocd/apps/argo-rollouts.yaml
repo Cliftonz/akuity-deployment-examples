@@ -30,7 +30,7 @@ spec:
       helm:
         releaseName: argo-rollouts
         valueFiles:
-          - $values/platform/argo-rollouts/values.yaml
+          - $values/1-helm/platform/argo-rollouts/values.yaml
     - repoURL: https://github.com/Cliftonz/akuity-deployment-examples
       targetRevision: HEAD
       ref: values

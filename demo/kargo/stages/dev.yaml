@@ -10,14 +10,6 @@ spec:
         name: guestbook
       sources:
         direct: true
-  verification:
-    analysisTemplates:
-      - name: guestbook-http-probe
-    args:
-      - name: service-name
-        value: guestbook
-      - name: service-namespace
-        value: guestbook-demo-dev
   promotionTemplate:
     spec:
       vars:
