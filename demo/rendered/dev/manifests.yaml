@@ -1,0 +1,79 @@
+---
+# Source: guestbook/templates/namespace.yaml
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: guestbook-demo-dev
+  labels:
+    app.kubernetes.io/name: guestbook
+    # Required for the Traefik Gateway to allow HTTPRoutes from this ns.
+    routes-from: business
+---
+# Source: guestbook/templates/service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: guestbook
+  namespace: guestbook-demo-dev
+spec:
+  selector:
+    app: guestbook
+  ports:
+    - name: http
+      port: 80
+      targetPort: http
+---
+# Source: guestbook/templates/deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: guestbook
+  namespace: guestbook-demo-dev
+  labels:
+    app.kubernetes.io/name: guestbook
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: guestbook
+  template:
+    metadata:
+      labels:
+        app: guestbook
+    spec:
+      containers:
+        - name: guestbook
+          image: gcr.io/google-samples/hello-app@sha256:d9d5ec862abaad2ef6c14f5cdd05915c8929508c0fff41a970abc7eea43e3874
+          ports:
+            - name: http
+              containerPort: 3000
+          readinessProbe:
+            httpGet: { path: /healthz, port: http }
+          # Minimum needed for PSA `restricted`. Most clusters enforce it
+          # by default; harmless if yours doesn't.
+          securityContext:
+            allowPrivilegeEscalation: false
+            runAsNonRoot: true
+            runAsUser: 10001
+            capabilities:
+              drop: ["ALL"]
+            seccompProfile:
+              type: RuntimeDefault
+---
+# Source: guestbook/templates/httproute.yaml
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: guestbook
+  namespace: guestbook-demo-dev
+spec:
+  parentRefs:
+    - name: traefik-gateway
+      namespace: traefik
+      sectionName: web
+  hostnames:
+    - "guestbook-demo-dev.local"
+  rules:
+    - backendRefs:
+        - name: guestbook
+          port: 80
